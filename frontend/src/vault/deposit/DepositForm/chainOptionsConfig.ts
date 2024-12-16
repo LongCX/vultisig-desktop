@@ -408,8 +408,8 @@ export const requiredFieldsPerChainAction = {
           z
             .number()
             .min(0)
-            .max(100)
-            .refine(val => val >= 0 && val <= 100, {
+            .max(10000)
+            .refine(val => val >= 0 && val <= 10000, {
               message: 'chainFunctions.withdrawPool.validations.percentage',
             })
         ),
