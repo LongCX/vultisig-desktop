@@ -25,7 +25,7 @@ export const generateMemo = (params: {
 
   switch (selectedChainAction) {
     case 'withdrawPool':
-      return `POOL-:${percentage}:${affiliateFee}:${fee}`;
+      return `POOL-:${percentage}:dx:0`;
     case 'addPool':
       return 'POOL+';
     case 'bond_with_lp':
