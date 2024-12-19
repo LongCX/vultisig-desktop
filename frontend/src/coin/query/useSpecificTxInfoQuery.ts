@@ -10,29 +10,34 @@ import { getCoinKey } from '../utils/coin';
 
 type SpecificTxInfoQueryParams = {
   coin: Coin;
+  receiver: string;
   feeSettings?: any;
 };
 
 type SpecificTxInfoQueryKeyParams = {
   coin: AccountCoinKey;
   feeSettings?: any;
+  receiver: string;
 };
 
 export const getSpecificTxInfoQueryKey = ({
   coin,
   feeSettings,
+  receiver,
 }: SpecificTxInfoQueryKeyParams) =>
-  withoutUndefined(['specificSendTxInfo', coin, feeSettings]);
+  withoutUndefined(['specificSendTxInfo', coin, receiver, feeSettings]);
 
 export const useSpecificTxInfoQuery = ({
   coin,
   feeSettings,
+  receiver,
 }: SpecificTxInfoQueryParams) => {
   const walletCore = useAssertWalletCore();
 
   return useQuery({
     queryKey: getSpecificTxInfoQueryKey({
       coin: getCoinKey(coin),
+      receiver,
       feeSettings,
     }),
     queryFn: async () => {
@@ -40,7 +45,11 @@ export const useSpecificTxInfoQuery = ({
         coin.chain as Chain,
         walletCore
       );
-      return service.rpcService.getSpecificTransactionInfo(coin, feeSettings);
+      return service.rpcService.getSpecificTransactionInfo(
+        coin,
+        receiver,
+        feeSettings
+      );
     },
   });
 };

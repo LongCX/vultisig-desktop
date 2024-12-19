@@ -310,6 +310,7 @@ export const en = {
   from: 'From',
   memo: 'Memo',
   amount: 'Amount',
+  save_changes: 'Save Changes',
   value: 'Value',
   gas: 'Gas',
   gas_limit: 'Gas limit',
@@ -531,6 +532,7 @@ export const en = {
   custom: 'Custom Action',
   vote: 'Vote',
   stake: 'Stake',
+  unstake: 'Unstake',
   chainFunctions: {
     amountExceeded: 'Amount exceeds available balance',
     requiredFieldMissing: 'Required field missing',
