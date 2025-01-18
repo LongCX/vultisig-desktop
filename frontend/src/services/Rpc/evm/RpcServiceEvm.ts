@@ -1,22 +1,20 @@
 import { ethers, TransactionRequest } from 'ethers';
 
-import { Fetch, Post } from '../../../../wailsjs/go/utils/GoHttp';
-import { evmRpcUrl } from '../../../chain/evm/evmRpcUrl';
-import { EvmFeeSettings } from '../../../chain/evm/fee/EvmFeeSettings';
-import { getEvmBaseFee } from '../../../chain/evm/utils/getEvmBaseFee';
-import { getEvmGasLimit } from '../../../chain/evm/utils/getEvmGasLimit';
+import { Fetch } from '../../../../wailsjs/go/utils/GoHttp';
 import {
-  defaultFeePriority,
-  FeePriority,
-} from '../../../chain/fee/FeePriority';
-import { gwei } from '../../../chain/tx/fee/utils/evm';
-import { fromChainAmount } from '../../../chain/utils/fromChainAmount';
+  getEvmChainId,
+  getEvmChainRpcUrl,
+  getEvmPublicClient,
+} from '../../../chain/evm/chainInfo';
+import { getErc20Balance } from '../../../chain/evm/erc20/getErc20Balance';
+import { FeePriority } from '../../../chain/fee/FeePriority';
 import { oneInchTokenToCoinMeta } from '../../../coin/oneInch/token';
 import { Coin } from '../../../gen/vultisig/keysign/v1/coin_pb';
+import { isOneOf } from '../../../lib/utils/array/isOneOf';
 import { extractErrorMsg } from '../../../lib/utils/error/extractErrorMsg';
-import { ChainUtils, EvmChain, evmChainIds } from '../../../model/chain';
+import { areLowerCaseEqual } from '../../../lib/utils/string/areLowerCaseEqual';
+import { Chain, EvmChain } from '../../../model/chain';
 import { CoinMeta } from '../../../model/coin-meta';
-import { SpecificEvm } from '../../../model/specific-transaction-info';
 import { Endpoint } from '../../Endpoint';
 import { ITokenService } from '../../Tokens/ITokenService';
 import { IRpcService } from '../IRpcService';
@@ -27,144 +25,19 @@ export class RpcServiceEvm implements IRpcService, ITokenService {
 
   constructor(chain: EvmChain) {
     this.chain = chain;
-    this.provider = new ethers.JsonRpcProvider(evmRpcUrl[chain]);
-  }
-
-  async sendTransaction(encodedTransaction: string): Promise<string> {
-    const knownErrors = [
-      'already known',
-      'Transaction is temporarily banned',
-      'nonce too low',
-      'nonce too high',
-      'transaction already exists',
-    ];
-
-    try {
-      const payload = {
-        jsonrpc: '2.0',
-        method: 'eth_sendRawTransaction',
-        params: [encodedTransaction],
-        id: 1,
-      };
-
-      // We are having a lot of cors issues, so we are using the Go server to send the transaction
-      const response = await Post(evmRpcUrl[this.chain], payload);
-
-      if (response && response.result) {
-        return response.result;
-      } else {
-        // Handle JSON-RPC error case
-        const errorMessage =
-          response.error?.message || 'Unknown error occurred';
-        const isKnownError = knownErrors.some(msg =>
-          errorMessage.includes(msg)
-        );
-
-        if (isKnownError) {
-          return 'Transaction already broadcasted.';
-        }
-
-        return errorMessage;
-      }
-    } catch (error: any) {
-      console.error('sendTransaction::', error);
-      const isKnownError = knownErrors.some(msg =>
-        error?.message?.includes(msg)
-      );
-
-      if (isKnownError) {
-        return 'Transaction already broadcasted.';
-      }
-
-      return error.message || 'Unknown error occurred';
-    }
-  }
-
-  async resolveENS(ensName: string): Promise<string> {
-    try {
-      const address = await this.provider.resolveName(ensName);
-      if (!address)
-        throw new Error('ENS  ' + ensName + ' namecould not be resolved.');
-      return address;
-    } catch (error) {
-      console.error('resolveENS::', error);
-      return '';
-    }
-  }
-
-  async fetchTokenBalance(
-    contractAddress: string,
-    walletAddress: string
-  ): Promise<bigint> {
-    try {
-      const balance = await this.fetchERC20TokenBalance(
-        contractAddress,
-        walletAddress
-      );
-      return BigInt(balance);
-    } catch (error) {
-      console.error('fetchTokenBalance::', error);
-      return BigInt(0);
-    }
+    this.provider = new ethers.JsonRpcProvider(getEvmChainRpcUrl(chain));
   }
 
   async getBalance(coin: Coin): Promise<string> {
-    try {
-      if (coin.isNativeToken) {
-        const balance = await this.provider.getBalance(coin.address);
-        const strBalance = balance.toString();
-        return strBalance;
-      } else {
-        return await this.fetchERC20TokenBalance(
-          coin.contractAddress,
-          coin.address
-        );
-      }
-    } catch (error) {
-      console.error(evmRpcUrl[this.chain], 'getBalance::', error);
-      return '0';
-    }
-  }
+    const balance = coin.isNativeToken
+      ? await this.provider.getBalance(coin.address)
+      : await getErc20Balance({
+          chain: this.chain,
+          address: coin.contractAddress as `0x${string}`,
+          accountAddress: coin.address as `0x${string}`,
+        });
 
-  normalizeFee(value: number): number {
-    return value + value / 2; // x1.5 fee
-  }
-
-  async getSpecificTransactionInfo(
-    coin: Coin,
-    _receiver: string,
-    feeSettings?: EvmFeeSettings
-  ): Promise<SpecificEvm> {
-    const [gasPrice, nonce] = await Promise.all([
-      this.provider.send('eth_gasPrice', []),
-      this.provider.getTransactionCount(coin.address),
-    ]);
-
-    const gasLimit =
-      feeSettings?.gasLimit ??
-      getEvmGasLimit({
-        chain: this.chain,
-        isNativeToken: coin.isNativeToken,
-      });
-
-    const baseFee = await getEvmBaseFee(this.chain);
-    const priorityFeeMapValue = await this.fetchMaxPriorityFeesPerGas();
-    const feePriority = feeSettings?.priority ?? defaultFeePriority;
-    const priorityFee = priorityFeeMapValue[feePriority];
-    const normalizedBaseFee = this.normalizeFee(Number(baseFee));
-    const maxFeePerGasWei = Number(
-      BigInt(Math.round(normalizedBaseFee + priorityFee))
-    );
-
-    return {
-      fee: maxFeePerGasWei * gasLimit,
-      gasPrice: fromChainAmount(Number(gasPrice), gwei.decimals),
-      nonce,
-      priorityFee,
-      priorityFeeWei: priorityFee,
-      gasLimit,
-      maxFeePerGasWei: maxFeePerGasWei,
-    } as SpecificEvm;
+    return balance.toString();
   }
 
   async fetchMaxPriorityFeesPerGas(): Promise<Record<FeePriority, number>> {
@@ -228,8 +101,36 @@ export class RpcServiceEvm implements IRpcService, ITokenService {
     }
   }
 
-  async broadcastTransaction(encodedTransaction: string): Promise<string> {
-    return this.sendTransaction(encodedTransaction);
+  async broadcastTransaction(
+    encodedTransaction: string
+  ): Promise<string | null> {
+    const publicClient = getEvmPublicClient(this.chain as EvmChain);
+
+    try {
+      const hash = await publicClient.sendRawTransaction({
+        serializedTransaction: encodedTransaction as `0x${string}`,
+      });
+      return hash;
+    } catch (error) {
+      // Common errors when transaction was already broadcast
+      const alreadyBroadcastErrors = [
+        'already known',
+        'transaction is temporarily banned',
+        'nonce too low',
+        'transaction already exists',
+      ];
+
+      const errorMessage = extractErrorMsg(error);
+      const isAlreadyBroadcast = alreadyBroadcastErrors.some(msg =>
+        areLowerCaseEqual(msg, errorMessage)
+      );
+
+      if (isAlreadyBroadcast) {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   async estimateGas(
@@ -250,59 +151,6 @@ export class RpcServiceEvm implements IRpcService, ITokenService {
       return BigInt(gasEstimate.toString());
     } catch (error) {
       console.error('estimateGas::', error);
-      return BigInt(0);
-    }
-  }
-
-  async fetchERC20TokenBalance(
-    contractAddress: string,
-    walletAddress: string
-  ): Promise<string> {
-    try {
-      const erc20Contract = new ethers.Contract(
-        contractAddress,
-        ['function balanceOf(address) view returns (uint256)'],
-        this.provider
-      );
-
-      const balance = await erc20Contract.balanceOf(walletAddress);
-
-      // Check if the balance is an empty response
-      if (!balance || balance.toString() === '0x') {
-        return '0';
-      }
-
-      return balance.toString();
-    } catch (error) {
-      console.error(
-        'fetchERC20TokenBalance::',
-        walletAddress,
-        contractAddress,
-        error
-      );
-
-      return '0';
-    }
-  }
-
-  async fetchAllowance(
-    contractAddress: string,
-    owner: string,
-    spender: string
-  ): Promise<bigint> {
-    try {
-      const erc20Contract = new ethers.Contract(
-        contractAddress,
-        [
-          'function allowance(address owner, address spender) view returns (uint256)',
-        ],
-        this.provider
-      );
-
-      const allowance = await erc20Contract.allowance(owner, spender);
-      return BigInt(allowance.toString());
-    } catch (error) {
-      console.error('fetchAllowance::', error);
       return BigInt(0);
     }
   }
@@ -340,13 +188,13 @@ export class RpcServiceEvm implements IRpcService, ITokenService {
 
   async getTokens(nativeToken: Coin): Promise<CoinMeta[]> {
     try {
-      const chain = ChainUtils.stringToChain(nativeToken.chain);
+      const chain = isOneOf(nativeToken.chain, Object.values(Chain));
 
       if (!chain) {
         throw new Error('Invalid chain');
       }
 
-      const oneInchChainId = evmChainIds[chain as EvmChain];
+      const oneInchChainId = getEvmChainId(chain as EvmChain);
       const oneInchEndpoint = Endpoint.fetch1InchsTokensBalance(
         oneInchChainId.toString(),
         nativeToken.address

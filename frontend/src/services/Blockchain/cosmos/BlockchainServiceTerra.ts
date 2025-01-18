@@ -5,11 +5,11 @@ import SigningMode = TW.Cosmos.Proto.SigningMode;
 import BroadcastMode = TW.Cosmos.Proto.BroadcastMode;
 import Long from 'long';
 
-import {
-  CosmosSpecific,
-  TransactionType,
-} from '../../../gen/vultisig/keysign/v1/blockchain_specific_pb';
-import { RpcServiceFactory } from '../../Rpc/RpcServiceFactory';
+import { cosmosFeeCoinDenom } from '../../../chain/cosmos/cosmosFeeCoinDenom';
+import { getBlockchainSpecificValue } from '../../../chain/keysign/KeysignChainSpecific';
+import { TransactionType } from '../../../gen/vultisig/keysign/v1/blockchain_specific_pb';
+import { assertField } from '../../../lib/utils/record/assertField';
+import { CosmosChain } from '../../../model/chain';
 import { BlockchainServiceCosmos } from './BlockchainServiceCosmos';
 
 export class BlockchainServiceTerra extends BlockchainServiceCosmos {
@@ -39,14 +39,14 @@ export class BlockchainServiceTerra extends BlockchainServiceCosmos {
   ): Promise<Uint8Array> {
     const walletCore = this.walletCore;
 
-    const cosmosSpecific = keysignPayload.blockchainSpecific
-      .value as unknown as CosmosSpecific;
+    const cosmosSpecific = getBlockchainSpecificValue(
+      keysignPayload.blockchainSpecific,
+      'cosmosSpecific'
+    );
 
-    if (!keysignPayload.coin) {
-      throw new Error('keysignPayload.coin is undefined');
-    }
+    const coin = assertField(keysignPayload, 'coin');
 
-    const pubKeyData = Buffer.from(keysignPayload.coin.hexPublicKey, 'hex');
+    const pubKeyData = Buffer.from(coin.hexPublicKey, 'hex');
     if (!pubKeyData) {
       throw new Error('invalid hex public key');
     }
@@ -60,19 +60,14 @@ export class BlockchainServiceTerra extends BlockchainServiceCosmos {
       throw new Error('invalid to address');
     }
 
-    const rpcService = RpcServiceFactory.createRpcService(this.chain) as any;
-    const denom = rpcService.denom();
+    const denom = cosmosFeeCoinDenom[this.chain as CosmosChain];
 
-    if (!denom) {
-      console.error('getPreSignedInputData > denom is not defined');
-      throw new Error('getPreSignedInputData > denom is not defined');
-    }
     const message: TW.Cosmos.Proto.Message[] = [
       TW.Cosmos.Proto.Message.create({
         wasmExecuteContractGeneric:
           TW.Cosmos.Proto.Message.WasmExecuteContractGeneric.create({
-            senderAddress: keysignPayload.coin.address,
-            contractAddress: keysignPayload.coin.contractAddress,
+            senderAddress: coin.address,
+            contractAddress: coin.contractAddress,
             executeMsg: `{"transfer": { "amount": "${keysignPayload.toAmount}", "recipient": "${keysignPayload.toAddress}" } }`,
           }),
       }),
@@ -109,14 +104,14 @@ export class BlockchainServiceTerra extends BlockchainServiceCosmos {
   ): Promise<Uint8Array> {
     const walletCore = this.walletCore;
 
-    const cosmosSpecific = keysignPayload.blockchainSpecific
-      .value as unknown as CosmosSpecific;
+    const cosmosSpecific = getBlockchainSpecificValue(
+      keysignPayload.blockchainSpecific,
+      'cosmosSpecific'
+    );
 
-    if (!keysignPayload.coin) {
-      throw new Error('keysignPayload.coin is undefined');
-    }
+    const coin = assertField(keysignPayload, 'coin');
 
-    const pubKeyData = Buffer.from(keysignPayload.coin.hexPublicKey, 'hex');
+    const pubKeyData = Buffer.from(coin.hexPublicKey, 'hex');
     if (!pubKeyData) {
       throw new Error('invalid hex public key');
     }
@@ -130,22 +125,17 @@ export class BlockchainServiceTerra extends BlockchainServiceCosmos {
       throw new Error('invalid to address');
     }
 
-    const rpcService = RpcServiceFactory.createRpcService(this.chain) as any;
-    const denom = rpcService.denom();
+    const denom = cosmosFeeCoinDenom[this.chain as CosmosChain];
 
-    if (!denom) {
-      console.error('getPreSignedInputData > denom is not defined');
-      throw new Error('getPreSignedInputData > denom is not defined');
-    }
     const message: TW.Cosmos.Proto.Message[] = [
       TW.Cosmos.Proto.Message.create({
         sendCoinsMessage: TW.Cosmos.Proto.Message.Send.create({
-          fromAddress: keysignPayload.coin.address,
+          fromAddress: coin.address,
           toAddress: keysignPayload.toAddress,
           amounts: [
             TW.Cosmos.Proto.Amount.create({
               amount: keysignPayload.toAmount,
-              denom: keysignPayload.coin.contractAddress,
+              denom: coin.contractAddress,
             }),
           ],
         }),

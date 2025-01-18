@@ -17,6 +17,7 @@ import { PageHeader } from '../../../ui/page/PageHeader';
 import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
 import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
 import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator';
+import { ChainAction } from '../ChainAction';
 import { useGetTotalAmountAvailableForChain } from '../hooks/useGetAmountTotalBalance';
 import { useGetMayaChainBondableAssetsQuery } from '../hooks/useGetMayaChainBondableAssetsQuery';
 import {
@@ -24,7 +25,7 @@ import {
   getFieldsForChainAction,
   resolveSchema,
 } from '../utils/schema';
-import { ChainAction } from './chainOptionsConfig';
+import { DISABLED_FIELDS_NAMES } from './chainOptionsConfig';
 import { DepositActionItemExplorer } from './DepositActionItemExplorer';
 import {
   AssetRequiredLabel,
@@ -164,38 +165,42 @@ export const DepositForm: FC<DepositFormProps> = ({
             )}
           {selectedChainAction && fieldsForChainAction.length > 0 && (
             <VStack gap={12}>
-              {fieldsForChainAction.map(field => (
-                <InputContainer key={field.name}>
-                  <Text size={15} weight="400">
-                    {t(
-                      `chainFunctions.${selectedChainAction}.labels.${field.name}`
-                    )}{' '}
-                    {field.required ? (
-                      <Text as="span" color="danger" size={14}>
-                        *
-                      </Text>
-                    ) : (
-                      <Text as="span" size={14}>
-                        ({t('chainFunctions.optional_validation')})
-                      </Text>
+              {fieldsForChainAction
+                .filter(field => !DISABLED_FIELDS_NAMES.includes(field.name))
+                .map(field => (
+                  <InputContainer key={field.name}>
+                    <Text size={15} weight="400">
+                      {t(
+                        `chainFunctions.${selectedChainAction}.labels.${field.name}`
+                      )}{' '}
+                      {field.required ? (
+                        <Text as="span" color="danger" size={14}>
+                          *
+                        </Text>
+                      ) : (
+                        <Text as="span" size={14}>
+                          ({t('chainFunctions.optional_validation')})
+                        </Text>
+                      )}
+                    </Text>
+                    <InputFieldWrapper
+                      as="input"
+                      onWheel={e => e.currentTarget.blur()}
+                      type={field.type}
+                      step="0.01"
+                      min={0}
+                      {...register(field.name)}
+                      required={field.required}
+                    />
+                    {errors[field.name] && (
+                      <ErrorText color="danger" size={13} className="error">
+                        {t(errors[field.name]?.message as string, {
+                          defaultValue: t('chainFunctions.default_validation'),
+                        })}
+                      </ErrorText>
                     )}
-                  </Text>
-                  <InputFieldWrapper
-                    as="input"
-                    type={field.type}
-                    step="0.01"
-                    {...register(field.name)}
-                    required={field.required}
-                  />
-                  {errors[field.name] && (
-                    <ErrorText color="danger" size={13} className="error">
-                      {t(errors[field.name]?.message as string, {
-                        defaultValue: t('chainFunctions.default_validation'),
-                      })}
-                    </ErrorText>
-                  )}
-                </InputContainer>
-              ))}
+                  </InputContainer>
+                ))}
             </VStack>
           )}
         </WithProgressIndicator>

@@ -1,26 +1,11 @@
 import { WalletCore } from '@trustwallet/wallet-core';
 import { z } from 'zod';
 
+import { isValidAddress } from '../../../chain/utils/isValidAddress';
 import { Chain } from '../../../model/chain';
-import { validateNodeAddress } from '../utils/validateNodeAddress';
 
-export type ChainWithAction = keyof typeof chainDepositOptionsConfig;
+export const DISABLED_FIELDS_NAMES = ['unbondAmount'];
 
-export const chainDepositOptionsConfig = {
-  thorchain: ['bond', 'unbond', 'leave', 'addPool', 'withdrawPool', 'custom'],
-  mayachain: [
-    'bond',
-    'unbond',
-    'bond_with_lp',
-    'unbond_with_lp',
-    'leave',
-    'custom',
-  ],
-  dydx: ['vote'],
-  ton: ['stake', 'unstake'],
-};
-
-export type ChainAction = keyof typeof requiredFieldsPerChainAction;
 export const requiredFieldsPerChainAction = {
   bond: {
     fields: [
@@ -61,8 +46,13 @@ export const requiredFieldsPerChainAction = {
             message: 'chainFunctions.bond.validations.nodeAddressMinLength',
           })
           .refine(
-            async address =>
-              await validateNodeAddress(address, chain, walletCore),
+            async address => {
+              return isValidAddress({
+                chain: chain as Chain,
+                address,
+                walletCore,
+              });
+            },
             {
               message: 'chainFunctions.bond.validations.nodeAddressInvalid',
             }
@@ -120,8 +110,13 @@ export const requiredFieldsPerChainAction = {
             message: 'chainFunctions.bond.validations.nodeAddressMinLength',
           })
           .refine(
-            async address =>
-              await validateNodeAddress(address, chain, walletCore),
+            async address => {
+              return isValidAddress({
+                chain: chain as Chain,
+                address,
+                walletCore,
+              });
+            },
             {
               message: 'chainFunctions.bond.validations.nodeAddressInvalid',
             }
@@ -181,12 +176,13 @@ export const requiredFieldsPerChainAction = {
         label: 'chainFunctions.unbond.labels.provider',
         required: false,
       },
+      {
+        name: 'unbondAmount',
+        type: 'number',
+        label: 'chainFunctions.unbond.labels.unbondAmount',
+      },
     ],
-    schema: (
-      chain: Chain,
-      walletCore: WalletCore,
-      totalAmountAvailable: number
-    ) =>
+    schema: (chain: Chain, walletCore: WalletCore) =>
       z.object({
         nodeAddress: z
           .string()
@@ -194,25 +190,18 @@ export const requiredFieldsPerChainAction = {
             message: 'chainFunctions.bond.validations.nodeAddressMinLength',
           })
           .refine(
-            async address =>
-              await validateNodeAddress(address, chain, walletCore),
+            async address => {
+              return isValidAddress({
+                chain: chain as Chain,
+                address,
+                walletCore,
+              });
+            },
             {
               message: 'chainFunctions.bond.validations.nodeAddressInvalid',
             }
           ),
-        amount: z
-          .string()
-          .transform(val => Number(val))
-          .pipe(
-            z
-              .number()
-              .positive()
-              .max(totalAmountAvailable, 'chainFunctions.amountExceeded')
-              .min(0.01, 'chainFunctions.unbond.validations.amount')
-              .refine(val => val > 0, {
-                message: 'chainFunctions.unbond.validations.amount',
-              })
-          ),
+        amount: z.string().transform(val => Number(val)),
         provider: z.string().optional(),
       }),
   },
@@ -249,8 +238,13 @@ export const requiredFieldsPerChainAction = {
             message: 'chainFunctions.bond.validations.nodeAddressMinLength',
           })
           .refine(
-            async address =>
-              await validateNodeAddress(address, chain, walletCore),
+            async address => {
+              return isValidAddress({
+                chain: chain as Chain,
+                address,
+                walletCore,
+              });
+            },
             {
               message: 'chainFunctions.bond.validations.nodeAddressInvalid',
             }
@@ -307,8 +301,13 @@ export const requiredFieldsPerChainAction = {
             message: 'chainFunctions.leave.validations.nodeAddressMinLength',
           })
           .refine(
-            async address =>
-              await validateNodeAddress(address, chain, walletCore),
+            async address => {
+              return isValidAddress({
+                chain: chain as Chain,
+                address,
+                walletCore,
+              });
+            },
             {
               message: 'chainFunctions.leave.validations.nodeAddressInvalid',
             }

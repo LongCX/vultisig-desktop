@@ -1,7 +1,6 @@
 import { Coin } from '../../../gen/vultisig/keysign/v1/coin_pb';
 import { Chain } from '../../../model/chain';
 import { CoinMeta } from '../../../model/coin-meta';
-import { SpecificSolana } from '../../../model/specific-transaction-info';
 import { Endpoint } from '../../Endpoint';
 import { ITokenService } from '../../Tokens/ITokenService';
 import { IRpcService } from '../IRpcService';
@@ -11,65 +10,60 @@ const rpcURL2 = Endpoint.solanaServiceRpc;
 const tokenInfoServiceURL = Endpoint.solanaTokenInfoServiceRpc;
 
 export class RpcServiceSolana implements IRpcService, ITokenService {
-  async sendTransaction(encodedTransaction: string): Promise<string> {
-    try {
-      // Simulate transaction before sending
-      const isSimulationSuccessful =
-        await this.simulateTransaction(encodedTransaction);
-      if (!isSimulationSuccessful.success) {
-        console.error(isSimulationSuccessful.error);
-        return (
-          isSimulationSuccessful.error || 'Error to simulate the transaction'
-        );
-      }
-
-      // Send transaction
-      const requestBody = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'sendTransaction',
-        params: [
-          encodedTransaction,
-          {
-            preflightCommitment: 'confirmed',
-            skipPreflight: true,
-          },
-        ],
-      };
-
-      const post = await fetch(rpcURL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      const response = await post.json();
-
-      if (response.error) {
-        console.error(`Error sending transaction: ${response.error.message}`);
-        return response.error.message;
-      }
-
-      const transactionHash = response.result as string;
-
-      // Confirm transaction
-      const isConfirmed = await this.confirmTransaction(transactionHash);
-      if (!isConfirmed.success) {
-        console.error(
-          isConfirmed.error ||
-            'Transaction confirmation failed or transaction was rejected.'
-        );
-        return (
-          isConfirmed.error ||
-          'Transaction confirmation failed or transaction was rejected.'
-        );
-      }
-
-      return transactionHash;
-    } catch (error) {
-      console.error(`Error sending transaction: ${(error as any).message}`);
-      return '';
+  async broadcastTransaction(encodedTransaction: string): Promise<string> {
+    // Simulate transaction before sending
+    const isSimulationSuccessful =
+      await this.simulateTransaction(encodedTransaction);
+    if (!isSimulationSuccessful.success) {
+      console.error(isSimulationSuccessful.error);
+      return (
+        isSimulationSuccessful.error || 'Error to simulate the transaction'
+      );
     }
+
+    // Send transaction
+    const requestBody = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'sendTransaction',
+      params: [
+        encodedTransaction,
+        {
+          preflightCommitment: 'confirmed',
+          skipPreflight: true,
+        },
+      ],
+    };
+
+    const post = await fetch(rpcURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    const response = await post.json();
+
+    if (response.error) {
+      console.error(`Error sending transaction: ${response.error.message}`);
+      return response.error.message;
+    }
+
+    const transactionHash = response.result as string;
+
+    // Confirm transaction
+    const isConfirmed = await this.confirmTransaction(transactionHash);
+    if (!isConfirmed.success) {
+      console.error(
+        isConfirmed.error ||
+          'Transaction confirmation failed or transaction was rejected.'
+      );
+      return (
+        isConfirmed.error ||
+        'Transaction confirmation failed or transaction was rejected.'
+      );
+    }
+
+    return transactionHash;
   }
 
   async simulateTransaction(
@@ -233,11 +227,6 @@ export class RpcServiceSolana implements IRpcService, ITokenService {
     }
   }
 
-  async broadcastTransaction(hex: string): Promise<string> {
-    // Solana does not broadcast via hex in the same way EVM chains do. Instead, you broadcast an encoded transaction.
-    return this.sendTransaction(hex);
-  }
-
   async fetchRecentBlockhash(): Promise<string> {
     const requestBody = {
       jsonrpc: '2.0',
@@ -307,38 +296,123 @@ export class RpcServiceSolana implements IRpcService, ITokenService {
   }
 
   async getTokens(nativeToken: Coin): Promise<CoinMeta[]> {
-    // Fetch token accounts associated with the native token's address
-    const accounts = await this.fetchTokenAccountsByOwner(nativeToken.address);
+    if (!nativeToken?.address) {
+      throw new Error('Invalid native token: Address is required');
+    }
 
-    // Extract token mint addresses from the accounts
+    const accounts = await this.fetchTokenAccountsByOwner(nativeToken.address);
+    if (!accounts.length) {
+      return [];
+    }
+
     const tokenAddresses = accounts.map(
       account => account.account.data.parsed.info.mint
     );
-
-    // Fetch token information for the given token addresses
     const tokenInfos = await this.fetchSolanaTokenInfoList(tokenAddresses);
 
-    // Map the token information to CoinMeta objects
-    return Object.entries(tokenInfos).map(([address, tokenInfo]: any) => ({
-      chain: Chain.Solana, // Assuming Solana chain here, adjust if dynamic
-      ticker: tokenInfo.tokenMetadata.onChainInfo.symbol,
-      logo: tokenInfo.tokenList.image,
-      decimals: tokenInfo.decimals,
-      contractAddress: address,
-      isNativeToken: false, // Non-native tokens in this case
-      priceProviderId: tokenInfo.tokenList.extensions.coingeckoId ?? '',
-    }));
+    return Object.entries(tokenInfos)
+      .filter(([_, info = {}]) =>
+        this.isValidToken({
+          coingeckoId: info.tokenList?.extensions?.coingeckoId,
+          symbol: info.tokenList?.symbol,
+          decimals: info.decimals,
+        })
+      )
+      .map(([address, info]) => this.mapToCoinMeta(address, info));
   }
 
   private async fetchSolanaTokenInfoList(
     contractAddresses: string[]
   ): Promise<Record<string, any>> {
-    const requestBody = { tokens: contractAddresses };
-    const response = await this.postRequest(tokenInfoServiceURL, requestBody);
-    return response;
+    const results: Record<string, any> = {};
+    const missingTokens: string[] = [];
+
+    try {
+      const solanaFmResults = await this.postRequest(tokenInfoServiceURL, {
+        tokens: contractAddresses,
+      });
+
+      Object.assign(results, solanaFmResults);
+
+      missingTokens.push(...contractAddresses.filter(addr => !results[addr]));
+
+      if (missingTokens.length) {
+        console.warn(
+          `Missing tokens from Solana.fm: ${missingTokens.join(', ')}`
+        );
+
+        const fallbackResults = await this.fetchFromJupiterBatch(missingTokens);
+
+        fallbackResults.forEach(({ address, data }) => {
+          if (data) results[address] = data;
+        });
+      }
+    } catch (error) {
+      console.error(`Error fetching token info: ${error}`);
+    }
+
+    return results;
   }
 
-  private async fetchHighPriorityFee(account: string): Promise<number> {
+  private async fetchFromJupiterBatch(
+    contractAddresses: string[]
+  ): Promise<{ address: string; data: any }[]> {
+    const fetchPromises = contractAddresses.map(address =>
+      this.fetchFromJupiter(address)
+        .then(data => ({ address, data }))
+        .catch(error => {
+          console.error(
+            `Error fetching token ${address} from Jupiter API: ${error.message}`
+          );
+          return { address, data: null };
+        })
+    );
+
+    return Promise.all(fetchPromises);
+  }
+
+  private async fetchFromJupiter(contractAddress: string): Promise<any> {
+    const url = Endpoint.solanaTokenInfoJupiterServiceRpc(contractAddress);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  private isValidToken(tokenInfo: {
+    coingeckoId?: string;
+    symbol?: string;
+    decimals?: number;
+  }): boolean {
+    if (!tokenInfo?.symbol || !tokenInfo?.decimals || !tokenInfo?.coingeckoId) {
+      console.warn(
+        `Skipping token with incomplete metadata: ${JSON.stringify(tokenInfo)}`
+      );
+      return false;
+    }
+    return true;
+  }
+
+  private mapToCoinMeta(address: string, tokenInfo: any): CoinMeta {
+    return {
+      chain: Chain.Solana,
+      ticker: (tokenInfo.tokenList?.symbol || '').toUpperCase(),
+      logo: tokenInfo.tokenList?.image || '',
+      decimals: tokenInfo.decimals || 0,
+      contractAddress: address,
+      isNativeToken: false,
+      priceProviderId: tokenInfo.tokenList?.extensions?.coingeckoId || '',
+    };
+  }
+
+  async fetchHighPriorityFee(account: string): Promise<number> {
     const requestBody = {
       jsonrpc: '2.0',
       id: 1,
@@ -349,57 +423,6 @@ export class RpcServiceSolana implements IRpcService, ITokenService {
     const response = await this.postRequest(rpcURL, requestBody);
     const fees = response.result.map((feeObj: any) => feeObj.prioritizationFee);
     return Math.max(...fees.filter((fee: number) => fee > 0), 0);
-  }
-
-  async getSpecificTransactionInfo(
-    coin: Coin,
-    receiver: string
-  ): Promise<SpecificSolana> {
-    try {
-      // Fetch the recent block hash and priority fee concurrently
-      const [recentBlockHash, highPriorityFee] = await Promise.all([
-        this.fetchRecentBlockhash(),
-        this.fetchHighPriorityFee(coin.address),
-      ]);
-
-      if (!recentBlockHash) {
-        throw new Error('Failed to get recent block hash');
-      }
-
-      let fromAddressPubKey = coin.address;
-      let toAddressPubKey = receiver;
-
-      // If the coin is not a native token and both from and to addresses are available
-      if (fromAddressPubKey && toAddressPubKey && !coin.isNativeToken) {
-        // Fetch associated token accounts for both the from and to addresses
-        const [associatedTokenAddressFrom, associatedTokenAddressTo] =
-          await Promise.all([
-            this.fetchTokenAssociatedAccountByOwner(
-              fromAddressPubKey,
-              coin.contractAddress
-            ),
-            this.fetchTokenAssociatedAccountByOwner(
-              toAddressPubKey,
-              coin.contractAddress
-            ),
-          ]);
-
-        fromAddressPubKey = associatedTokenAddressFrom;
-        toAddressPubKey = associatedTokenAddressTo;
-      }
-
-      // Construct and return the SpecificSolana object
-      return {
-        recentBlockHash,
-        priorityFee: highPriorityFee,
-        fromAddressPubKey: fromAddressPubKey || undefined,
-        toAddressPubKey: toAddressPubKey || undefined,
-        gasPrice: 1000000 / Math.pow(10, 9),
-        fee: 1000000, // Solana fees are handled differently
-      } as SpecificSolana;
-    } catch (error) {
-      throw new Error(`Error fetching gas info: ${(error as any).message}`);
-    }
   }
 
   async calculateFee(coin?: Coin): Promise<number> {

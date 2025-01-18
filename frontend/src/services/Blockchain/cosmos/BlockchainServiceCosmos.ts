@@ -1,69 +1,45 @@
 import { TW } from '@trustwallet/wallet-core';
 
 import { KeysignPayload } from '../../../gen/vultisig/keysign/v1/keysign_message_pb';
-import { IBlockchainService } from '../IBlockchainService';
-import { SignedTransactionResult } from '../signed-transaction-result';
+import {
+  IBlockchainService,
+  SignedTransactionResult,
+} from '../IBlockchainService';
 import SigningMode = TW.Cosmos.Proto.SigningMode;
 import BroadcastMode = TW.Cosmos.Proto.BroadcastMode;
-import TxCompiler = TW.TxCompiler;
+import { PublicKey } from '@trustwallet/wallet-core/dist/src/wallet-core';
 import { createHash } from 'crypto';
 import Long from 'long';
 
 import { tss } from '../../../../wailsjs/go/models';
-import {
-  CosmosSpecific,
-  TransactionType,
-} from '../../../gen/vultisig/keysign/v1/blockchain_specific_pb';
-import { SpecificCosmos } from '../../../model/specific-transaction-info';
-import { ISendTransaction, ITransaction } from '../../../model/transaction';
-import { AddressServiceFactory } from '../../Address/AddressServiceFactory';
-import { RpcServiceFactory } from '../../Rpc/RpcServiceFactory';
+import { cosmosFeeCoinDenom } from '../../../chain/cosmos/cosmosFeeCoinDenom';
+import { getBlockchainSpecificValue } from '../../../chain/keysign/KeysignChainSpecific';
+import { getPreSigningHashes } from '../../../chain/tx/utils/getPreSigningHashes';
+import { assertSignature } from '../../../chain/utils/assertSignature';
+import { generateSignatureWithRecoveryId } from '../../../chain/utils/generateSignatureWithRecoveryId';
+import { hexEncode } from '../../../chain/walletCore/hexEncode';
+import { TransactionType } from '../../../gen/vultisig/keysign/v1/blockchain_specific_pb';
+import { assertField } from '../../../lib/utils/record/assertField';
+import { CosmosChain } from '../../../model/chain';
 import { BlockchainService } from '../BlockchainService';
-import SignatureProvider from '../signature-provider';
 
 export class BlockchainServiceCosmos
   extends BlockchainService
   implements IBlockchainService
 {
-  createKeysignPayload(
-    obj: ITransaction | ISendTransaction,
-    localPartyId: string,
-    publicKeyEcdsa: string
-  ): KeysignPayload {
-    const payload: KeysignPayload = super.createKeysignPayload(
-      obj,
-      localPartyId,
-      publicKeyEcdsa
-    );
-    const specific = new CosmosSpecific();
-    const gasInfoSpecific: SpecificCosmos =
-      obj.specificTransactionInfo as SpecificCosmos;
-    specific.accountNumber = BigInt(gasInfoSpecific.accountNumber);
-    specific.sequence = BigInt(gasInfoSpecific.sequence);
-    specific.gas = BigInt(gasInfoSpecific.gas);
-    specific.transactionType = gasInfoSpecific.transactionType;
-
-    payload.blockchainSpecific = {
-      case: 'cosmosSpecific',
-      value: specific,
-    };
-
-    return payload;
-  }
-
   async getPreSignedInputData(
     keysignPayload: KeysignPayload
   ): Promise<Uint8Array> {
     const walletCore = this.walletCore;
 
-    const cosmosSpecific = keysignPayload.blockchainSpecific
-      .value as unknown as CosmosSpecific;
+    const cosmosSpecific = getBlockchainSpecificValue(
+      keysignPayload.blockchainSpecific,
+      'cosmosSpecific'
+    );
 
-    if (!keysignPayload.coin) {
-      throw new Error('keysignPayload.coin is undefined');
-    }
+    const coin = assertField(keysignPayload, 'coin');
 
-    const pubKeyData = Buffer.from(keysignPayload.coin.hexPublicKey, 'hex');
+    const pubKeyData = Buffer.from(coin.hexPublicKey, 'hex');
     if (!pubKeyData) {
       throw new Error('invalid hex public key');
     }
@@ -77,24 +53,17 @@ export class BlockchainServiceCosmos
       throw new Error('invalid to address');
     }
 
-    const rpcService = RpcServiceFactory.createRpcService(this.chain) as any;
-    const denom = rpcService.denom();
+    const denom = cosmosFeeCoinDenom[this.chain as CosmosChain];
 
-    if (!denom) {
-      console.error('getPreSignedInputData > denom is not defined');
-      throw new Error('getPreSignedInputData > denom is not defined');
-    }
     const message: TW.Cosmos.Proto.Message[] = [
       TW.Cosmos.Proto.Message.create({
         sendCoinsMessage: TW.Cosmos.Proto.Message.Send.create({
-          fromAddress: keysignPayload.coin.address,
+          fromAddress: coin.address,
           toAddress: keysignPayload.toAddress,
           amounts: [
             TW.Cosmos.Proto.Amount.create({
               amount: keysignPayload.toAmount,
-              denom: keysignPayload.coin.isNativeToken
-                ? denom
-                : keysignPayload.coin.contractAddress,
+              denom: coin.isNativeToken ? denom : coin.contractAddress,
             }),
           ],
         }),
@@ -128,78 +97,57 @@ export class BlockchainServiceCosmos
   }
 
   async getSignedTransaction(
-    vaultHexPublicKey: string,
-    vaultHexChainCode: string,
-    data: KeysignPayload | Uint8Array,
+    publicKey: PublicKey,
+    txInputData: Uint8Array,
     signatures: { [key: string]: tss.KeysignResponse }
   ): Promise<SignedTransactionResult> {
     const walletCore = this.walletCore;
-    let inputData: Uint8Array;
-    if (data instanceof Uint8Array) {
-      inputData = data;
-    } else {
-      inputData = await this.getPreSignedInputData(data);
-    }
 
-    const addressService = AddressServiceFactory.createAddressService(
-      this.chain,
-      walletCore
-    );
-    const publicKey = await addressService.getPublicKey(
-      vaultHexPublicKey,
-      '',
-      vaultHexChainCode
-    );
     const publicKeyData = publicKey.data();
 
-    try {
-      const hashes = walletCore.TransactionCompiler.preImageHashes(
+    const [dataHash] = getPreSigningHashes({
+      walletCore,
+      txInputData,
+      chain: this.chain,
+    });
+
+    const allSignatures = walletCore.DataVector.create();
+    const publicKeys = walletCore.DataVector.create();
+
+    const signature = generateSignatureWithRecoveryId({
+      walletCore,
+      signature: signatures[hexEncode({ value: dataHash, walletCore })],
+    });
+
+    assertSignature({
+      publicKey,
+      message: dataHash,
+      signature,
+    });
+
+    allSignatures.add(signature);
+    publicKeys.add(publicKeyData);
+
+    const compileWithSignatures =
+      walletCore.TransactionCompiler.compileWithSignatures(
         this.coinType,
-        inputData
+        txInputData,
+        allSignatures,
+        publicKeys
       );
+    const output = TW.Cosmos.Proto.SigningOutput.decode(compileWithSignatures);
 
-      const preSigningOutput = TxCompiler.Proto.PreSigningOutput.decode(hashes);
-      const allSignatures = walletCore.DataVector.create();
-      const publicKeys = walletCore.DataVector.create();
+    const rawTx = output.serialized;
+    const parsedData = JSON.parse(rawTx);
+    const txBytes = parsedData.tx_bytes;
+    const decodedTxBytes = Buffer.from(txBytes, 'base64');
+    const txHash = createHash('sha256')
+      .update(decodedTxBytes as any)
+      .digest('hex');
 
-      const signatureProvider = new SignatureProvider(walletCore, signatures);
-      const signature = signatureProvider.getSignatureWithRecoveryId(
-        preSigningOutput.dataHash
-      );
-
-      if (!publicKey.verify(signature, preSigningOutput.dataHash)) {
-        throw new Error('Invalid signature');
-      }
-      allSignatures.add(signature);
-      publicKeys.add(publicKeyData);
-
-      const compileWithSignatures =
-        walletCore.TransactionCompiler.compileWithSignatures(
-          this.coinType,
-          inputData,
-          allSignatures,
-          publicKeys
-        );
-      const output = TW.Cosmos.Proto.SigningOutput.decode(
-        compileWithSignatures
-      );
-
-      const serializedData = output.serialized;
-      const parsedData = JSON.parse(serializedData);
-      const txBytes = parsedData.tx_bytes;
-      const decodedTxBytes = Buffer.from(txBytes, 'base64');
-      const hash = createHash('sha256')
-        .update(decodedTxBytes as any)
-        .digest('hex');
-      const result = new SignedTransactionResult(
-        serializedData,
-        hash,
-        undefined
-      );
-      return result;
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
+    return {
+      rawTx,
+      txHash,
+    };
   }
 }

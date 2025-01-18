@@ -8,26 +8,23 @@ import { TxOverviewRow } from '../../../chain/tx/components/TxOverviewRow';
 import { formatFee } from '../../../chain/tx/fee/utils/formatFee';
 import { fromChainAmount } from '../../../chain/utils/fromChainAmount';
 import { useCoinPriceQuery } from '../../../coin/query/useCoinPriceQuery';
+import { KeysignPayload } from '../../../gen/vultisig/keysign/v1/keysign_message_pb';
 import { useGlobalCurrency } from '../../../lib/hooks/useGlobalCurrency';
+import { ComponentWithValueProps } from '../../../lib/ui/props';
 import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
 import { Text } from '../../../lib/ui/text';
 import { shouldBePresent } from '../../../lib/utils/assert/shouldBePresent';
 import { formatAmount } from '../../../lib/utils/formatAmount';
+import { assertField } from '../../../lib/utils/record/assertField';
 import { Chain } from '../../../model/chain';
 import { CoinMeta } from '../../../model/coin-meta';
-import { SpecificTransactionInfo } from '../../../model/specific-transaction-info';
-import { useKeysignPayload } from './state/keysignPayload';
 
-export const KeysignTxPrimaryInfo = () => {
-  const {
-    coin: potentialCoin,
-    toAddress,
-    memo,
-    toAmount,
-    blockchainSpecific,
-  } = useKeysignPayload();
+export const KeysignTxPrimaryInfo = ({
+  value,
+}: ComponentWithValueProps<KeysignPayload>) => {
+  const { toAddress, memo, toAmount, blockchainSpecific } = value;
 
-  const coin = shouldBePresent(potentialCoin);
+  const coin = assertField(value, 'coin');
 
   const { decimals, ticker } = shouldBePresent(coin);
 
@@ -41,12 +38,16 @@ export const KeysignTxPrimaryInfo = () => {
     if (!blockchainSpecific.value) return null;
     formatFee({
       chain: coin.chain as Chain,
-      txInfo: blockchainSpecific.value as unknown as SpecificTransactionInfo,
+      chainSpecific: blockchainSpecific,
     });
-  }, [blockchainSpecific.value, coin.chain]);
+  }, [blockchainSpecific, coin.chain]);
 
   return (
     <>
+      <TxOverviewPrimaryRow title={t('from')}>
+        {coin.address}
+      </TxOverviewPrimaryRow>
+
       <TxOverviewPrimaryRow title={t('to')}>{toAddress}</TxOverviewPrimaryRow>
       {memo && <TxOverviewMemo value={memo} />}
       <TxOverviewAmount

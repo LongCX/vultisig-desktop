@@ -15,6 +15,7 @@ export const sortCoinsByBalance = <
     items,
     ({ amount }) => (amount ? 0 : 1)
   );
+
   const [itemsWithPrice, itemsWithoutPrice] = splitBy(
     itemsWithBalance,
     ({ price }) => (price ? 0 : 1)

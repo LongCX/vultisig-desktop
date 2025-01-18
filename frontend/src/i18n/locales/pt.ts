@@ -14,6 +14,7 @@ export const pt = {
   missing_public_key_ecdsa: 'Chave pública ECDSA ausente',
   missing_verification_code: 'Código de verificação ausente',
   next: 'Próximo',
+  required_field_missing: 'Campo obrigatório em falta',
   failed_to_confirm_email_code:
     'Falha ao confirmar o código de verificação de e-mail',
   skip: 'Pular',
@@ -211,7 +212,7 @@ export const pt = {
   vault_backup_page_verified_password_error: 'As senhas devem ser iguais',
   vault_backup_page_submit_button_text: 'Salvar',
   vault_backup_page_submit_loading_button_text: 'Salvando...',
-  vault_backup_page_skip_button_text: 'Pular',
+  vault_backup_page_skip_button_text: 'Saltar senha',
   vault_backup_page_password_info:
     'Nunca armazene os fragmentos do seu cofre de dispositivos diferentes no mesmo local',
   vault_rename_page_name_error:
@@ -311,6 +312,7 @@ export const pt = {
   from: 'De',
   memo: 'Memo',
   amount: 'Valor',
+  unbondAmount: 'Quantia de Desvinculação',
   value: 'Valor',
   gas: 'Gás',
   network_fee: 'Taxa de rede',
@@ -401,51 +403,6 @@ export const pt = {
   max: 'Máx',
   insufficient_funds_to_pay_fee:
     'Saldo insuficiente para cobrir a taxa de transação.',
-  'page.swap.quote.amount.error':
-    'Nenhuma cotação disponível para o valor e par solicitados.',
-  'page.swap.info.title': 'O que é troca de ativos?',
-  'page.swap.info.how.it.work': 'Como funciona?',
-  'page.swap.info.select.assets': 'Selecionar ativos',
-  'page.swap.info.select.assets.description':
-    'Comece escolhendo os dois ativos que você deseja trocar, como Bitcoin por Ethereum.',
-  'page.swap.info.check.rates': 'Verifique as taxas',
-  'page.swap.info.check.rates.description':
-    'Nossa plataforma mostra a taxa de câmbio atual e quaisquer taxas associadas. As taxas são determinadas pelas condições de mercado e liquidez.',
-  'page.swap.info.confirm.swap': 'Confirmar troca',
-  'page.swap.info.confirm.swap.description':
-    'Depois que você confirma a troca, a rede descentralizada da Vultisig processa a transação com segurança.',
-  'page.swap.info.receive.assets': 'Receber Ativos',
-  'page.swap.info.receive.assets.description':
-    'O ativo trocado é depositado diretamente na sua carteira, normalmente em minutos.',
-  'page.swap.info.swap.benefits.title':
-    'Benefícios de usar Vultisig para swapping',
-  'page.swap.info.swap.benefits.decentralised': 'Descentralizado',
-  'page.swap.info.swap.benefits.decentralised.description':
-    'Operamos em protocolos totalmente descentralizados, garantindo segurança e transparência.',
-  'page.swap.info.swap.benefits.speed': 'Velocidade',
-  'page.swap.info.swap.benefits.speed.description':
-    'As transações são processadas rapidamente, proporcionando uma experiência de troca perfeita.',
-  'page.swap.info.swap.benefits.accessibility': 'Acessibilidade',
-  'page.swap.info.swap.benefits.accessibility.description':
-    'Troque uma ampla gama de criptomoedas sem a necessidade de intermediários tradicionais.',
-  'page.swap.info.swap.benefits.liquidity': 'Liquidez',
-  'page.swap.info.swap.benefits.liquidity.description':
-    'A Vultisig garante liquidez, facilitando a troca de grandes quantias às taxas de mercado.',
-  'page.swap.info.tips': 'Dicas para novos usuários',
-  'page.swap.info.tips.start': 'Comece pequeno',
-  'page.swap.info.tips.start.description':
-    'Se você é novo em trocas, considere começar com uma pequena transação para se familiarizar com o processo.',
-  'page.swap.info.tips.stay.informed': 'Mantenha-se informado',
-  'page.swap.info.tips.stay.informed.description':
-    'Fique de olho nas tendências e taxas do mercado. O momento certo pode impactar o valor que você recebe.',
-  'page.swap.info.tips.security': 'Segurança',
-  'page.swap.info.tips.security.description':
-    'Garanta sempre a segurança da sua carteira e das suas chaves privadas.',
-  'page.swap.receiver.optional': 'Receptor (opcional)',
-  'page.swap.halted.state':
-    'A negociação foi interrompida para o par selecionado, não é possível processar a troca',
-  'page.swap.not.possible':
-    'Trocar para um contrato inteligente não é possível! Insira um endereço de destinatário diferente.',
   swap_terms_0: 'O valor do swap está correto',
   swap_terms_1: 'Concordo com o valor que receberei após a troca',
   swap_agree_terms: 'Você deve concordar com os termos antes de prosseguir',
@@ -537,6 +494,7 @@ export const pt = {
     },
     unbond: {
       labels: {
+        unbondAmount: 'Quantidade de Desvinculação',
         nodeAddress: 'Endereço do Nó',
         amount: 'Quantidade',
         provider: 'Provedor',
@@ -659,5 +617,25 @@ export const pt = {
   swap: 'Trocar',
   allowance: 'Mesada',
   provider: 'Provedor',
-  estimated_fees: 'Taxas estimadas',
+  swap_tracking_link: 'Link de rastreamento de troca',
+  swap_fee: 'Taxa de swap',
+  and: 'e',
+  approve: 'Aprovar',
+  action: 'Ação',
+  from_asset: 'Do Ativo',
+  to_asset: 'Para Ativo',
+  allowance_spender: 'Gastador de mesada',
+  allowance_amount: 'Valor do subsídio',
+  method: 'Método',
+  message: 'Mensagem',
+  signature: 'Assinatura',
+  signing_method: 'Método de assinatura',
+  message_to_sign: 'Mensagem para assinar',
+  sign_custom_message: 'Assinar mensagem personalizada',
+  sign_message: 'Assinar mensagem',
+  method_required: 'O método de assinatura é obrigatório',
+  message_required: 'Mensagem é necessária',
+  something_went_wrong: 'Algo deu errado',
+  report_error: 'Relatar erro',
+  go_to_home_page: 'Ir para a página inicial',
 };

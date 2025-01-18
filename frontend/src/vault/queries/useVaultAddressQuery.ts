@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { createCoin } from '../../coin/utils/createCoin';
 import { Chain } from '../../model/chain';
 import { useAssertWalletCore } from '../../providers/WalletCoreProvider';
 import { TokensStore } from '../../services/Coin/CoinList';
-import { CoinServiceFactory } from '../../services/Coin/CoinServiceFactory';
+import { getVaultPublicKey } from '../publicKey/getVaultPublicKey';
 import { useCurrentVault } from '../state/currentVault';
 import { useCurrentVaultId } from '../state/currentVaultId';
 
@@ -24,17 +25,17 @@ export const useVaultAddressQuery = (chain: Chain) => {
         throw new Error(`No native token found for chain: ${chain}`);
       }
 
-      const coinService = CoinServiceFactory.createCoinService(
-        chain,
-        walletCore!
-      );
+      const publicKey = await getVaultPublicKey({
+        vault,
+        chain: nativeTokens.chain,
+        walletCore,
+      });
 
-      const coin = await coinService.createCoin(
-        nativeTokens,
-        vault.public_key_ecdsa || '',
-        vault.public_key_eddsa || '',
-        vault.hex_chain_code || ''
-      );
+      const coin = createCoin({
+        coinMeta: nativeTokens,
+        publicKey,
+        walletCore,
+      });
 
       return coin.address;
     },

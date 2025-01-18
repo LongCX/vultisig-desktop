@@ -1,24 +1,24 @@
-import { useTranslation } from 'react-i18next';
-
-import { TxOverviewPanel } from '../../../../chain/tx/components/TxOverviewPanel';
-import { TxOverviewPrimaryRow } from '../../../../chain/tx/components/TxOverviewPrimaryRow';
-import { shouldBePresent } from '../../../../lib/utils/assert/shouldBePresent';
+import { MatchRecordUnion } from '../../../../lib/ui/base/MatchRecordUnion';
+import { KeysignSwapTxInfo } from '../../../swap/keysign/KeysignSwapTxInfo';
 import { KeysignTxPrimaryInfo } from '../../shared/KeysignTxPrimaryInfo';
-import { useKeysignPayload } from '../../shared/state/keysignPayload';
+import { useKeysignMessagePayload } from '../../shared/state/keysignMessagePayload';
+import { KeysignCustomMessageInfo } from './KeysignCustomMessageInfo';
 
 export const KeysignTxOverview = () => {
-  const { coin: potentialCoin } = useKeysignPayload();
-
-  const coin = shouldBePresent(potentialCoin);
-
-  const { address } = shouldBePresent(coin);
-
-  const { t } = useTranslation();
+  const keysignMessagePayload = useKeysignMessagePayload();
 
   return (
-    <TxOverviewPanel>
-      <TxOverviewPrimaryRow title={t('from')}>{address}</TxOverviewPrimaryRow>
-      <KeysignTxPrimaryInfo />
-    </TxOverviewPanel>
+    <MatchRecordUnion
+      value={keysignMessagePayload}
+      handlers={{
+        keysign: payload =>
+          payload.swapPayload.value ? (
+            <KeysignSwapTxInfo />
+          ) : (
+            <KeysignTxPrimaryInfo value={payload} />
+          ),
+        custom: value => <KeysignCustomMessageInfo value={value} />,
+      }}
+    />
   );
 };

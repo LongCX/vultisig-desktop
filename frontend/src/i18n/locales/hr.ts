@@ -14,6 +14,7 @@ export const hr = {
   email_confirmation_code_error: 'Érvénytelen kód',
   email_confirmation: 'Adja meg a kódot',
   create_new_vault: 'Kreiraj novi trezor',
+  required_field_missing: 'Hiányzó kötelező mező',
   import_existing_vault: 'Uvezi postojeći trezor',
   next: 'Dalje',
   failed_to_confirm_email_code: 'Nije uspjela potvrda koda za potvrdu e-pošte',
@@ -206,7 +207,7 @@ export const hr = {
   vault_backup_page_verified_password_error: 'Lozinke se moraju podudarati',
   vault_backup_page_submit_button_text: 'Spremi',
   vault_backup_page_submit_loading_button_text: 'Spremanje...',
-  vault_backup_page_skip_button_text: 'Preskoči',
+  vault_backup_page_skip_button_text: 'Jelszó kihagyása',
   vault_backup_page_password_info:
     'Nikada ne pohranjujte dijelove trezora s različitih uređaja na isto mjesto',
   vault_rename_page_name_error: 'Naziv trezora mora biti između 1 i 50 znakova',
@@ -302,6 +303,7 @@ export const hr = {
   from: 'Od',
   memo: 'Memo',
   amount: 'Iznos',
+  unbondAmount: 'Kibontási Összeg',
   value: 'Vrijednost',
   gas: 'Plin',
   network_fee: 'Naknada za mrežu',
@@ -387,51 +389,6 @@ export const hr = {
   max: 'Maks',
   insufficient_funds_to_pay_fee:
     'Nincs elegendő egyenleg a tranzakciós díj fedezésére.',
-  'page.swap.quote.amount.error':
-    'Nema dostupne ponude za traženi iznos i par.',
-  'page.swap.info.title': 'Što je zamjena imovine?',
-  'page.swap.info.how.it.work': 'Kako radi?',
-  'page.swap.info.select.assets': 'Odaberite Sredstva',
-  'page.swap.info.select.assets.description':
-    'Započnite odabirom dva sredstva koja želite zamijeniti, poput Bitcoina za Ethereum.',
-  'page.swap.info.check.rates': 'Provjerite cijene',
-  'page.swap.info.check.rates.description':
-    'Naša platforma prikazuje trenutni tečaj i sve povezane naknade. Stope su određene tržišnim uvjetima i likvidnošću.',
-  'page.swap.info.confirm.swap': 'Potvrdite zamjenu',
-  'page.swap.info.confirm.swap.description':
-    'Nakon što potvrdite zamjenu, Vultisigova decentralizirana mreža sigurno obrađuje transakciju.',
-  'page.swap.info.receive.assets': 'Primite imovinu',
-  'page.swap.info.receive.assets.description':
-    'Zamijenjena imovina polaže se izravno u vaš novčanik, obično u roku od nekoliko minuta.',
-  'page.swap.info.swap.benefits.title':
-    'Prednosti korištenja Vultisiga za zamjenu',
-  'page.swap.info.swap.benefits.decentralised': 'Decentralizirano',
-  'page.swap.info.swap.benefits.decentralised.description':
-    'Radimo na potpuno decentraliziranim protokolima, osiguravajući sigurnost i transparentnost.',
-  'page.swap.info.swap.benefits.speed': 'Ubrzati',
-  'page.swap.info.swap.benefits.speed.description':
-    'Transakcije se brzo obrađuju, pružajući besprijekorno iskustvo zamjene.',
-  'page.swap.info.swap.benefits.accessibility': 'Pristupačnost',
-  'page.swap.info.swap.benefits.accessibility.description':
-    'Zamijenite širok raspon kriptovaluta bez potrebe za tradicionalnim posrednicima.',
-  'page.swap.info.swap.benefits.liquidity': 'Likvidnost',
-  'page.swap.info.swap.benefits.liquidity.description':
-    'Vultisig osigurava likvidnost, olakšavajući zamjenu velikih iznosa po tržišnim stopama.',
-  'page.swap.info.tips': 'Savjeti za nove korisnike',
-  'page.swap.info.tips.start': 'Počnite s malim',
-  'page.swap.info.tips.start.description':
-    'Ako ste novi u zamjeni, razmislite o tome da započnete s malom transakcijom kako biste se upoznali s postupkom.',
-  'page.swap.info.tips.stay.informed': 'Budite informirani',
-  'page.swap.info.tips.stay.informed.description':
-    'Pratite tržišne trendove i stope. Vrijeme može utjecati na vrijednost koju primate.',
-  'page.swap.info.tips.security': 'Sigurnost',
-  'page.swap.info.tips.security.description':
-    'Uvijek osigurajte sigurnost svog novčanika i privatnih ključeva.',
-  'page.swap.receiver.optional': 'Prijemnik (opcionalno)',
-  'page.swap.halted.state':
-    'Trgovanje je zaustavljeno za odabrani par, ne može se obraditi zamjena',
-  'page.swap.not.possible':
-    'Zamjena za pametni ugovor nije moguća! Unesite drugu adresu primatelja.',
   swap_terms_0: 'A swap összeg helyes',
   swap_terms_1: 'Egyetértek azzal az összeggel, amit a csere után kapok',
   swap_agree_terms: 'A folytatás előtt el kell fogadnia a feltételeket',
@@ -522,6 +479,7 @@ export const hr = {
     },
     unbond: {
       labels: {
+        unbondAmount: 'Kibontási Összeg',
         nodeAddress: 'Adresa Čvora',
         amount: 'Iznos',
         provider: 'Pružatelj',
@@ -646,5 +604,25 @@ export const hr = {
   swap: 'Zamjena',
   allowance: 'dodatak',
   provider: 'Davatelj',
-  estimated_fees: 'Procijenjene naknade',
+  swap_tracking_link: 'Swap link za praćenje',
+  swap_fee: 'Naknada za zamjenu',
+  and: 'i',
+  approve: 'Odobriti',
+  action: 'Akcijski',
+  from_asset: 'Od imovine',
+  to_asset: 'Za sredstvo',
+  allowance_spender: 'Potrošač džeparca',
+  allowance_amount: 'Iznos dodatka',
+  method: 'metoda',
+  message: 'Poruka',
+  signature: 'Potpis',
+  signing_method: 'Način potpisivanja',
+  message_to_sign: 'Poruka za potpisivanje',
+  sign_custom_message: 'Potpišite prilagođenu poruku',
+  sign_message: 'Potpišite poruku',
+  method_required: 'Potreban je način potpisivanja',
+  message_required: 'Poruka je obavezna',
+  something_went_wrong: 'Nešto nije u redu',
+  report_error: 'Prijavi pogrešku',
+  go_to_home_page: 'Idi na početnu stranicu',
 };

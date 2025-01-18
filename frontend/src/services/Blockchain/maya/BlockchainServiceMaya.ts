@@ -1,81 +1,46 @@
-/* eslint-disable */
 import { TW } from '@trustwallet/wallet-core';
+
 import { tss } from '../../../../wailsjs/go/models';
-import { MAYAChainSpecific } from '../../../gen/vultisig/keysign/v1/blockchain_specific_pb';
 import { KeysignPayload } from '../../../gen/vultisig/keysign/v1/keysign_message_pb';
 import { Chain } from '../../../model/chain';
-import { IBlockchainService } from '../IBlockchainService';
-import { SignedTransactionResult } from '../signed-transaction-result';
+import {
+  IBlockchainService,
+  SignedTransactionResult,
+} from '../IBlockchainService';
 import SigningMode = TW.Cosmos.Proto.SigningMode;
 import BroadcastMode = TW.Cosmos.Proto.BroadcastMode;
-import TxCompiler = TW.TxCompiler;
-import SignatureProvider from '../signature-provider';
+import { PublicKey } from '@trustwallet/wallet-core/dist/src/wallet-core';
 import { createHash } from 'crypto';
-import { AddressServiceFactory } from '../../Address/AddressServiceFactory';
-import { BlockchainService } from '../BlockchainService';
-import { SpecificThorchain } from '../../../model/specific-transaction-info';
-import {
-  ISendTransaction,
-  ISwapTransaction,
-  ITransaction,
-  TransactionType,
-} from '../../../model/transaction';
 import Long from 'long';
+
+import { getBlockchainSpecificValue } from '../../../chain/keysign/KeysignChainSpecific';
+import { mayaConfig } from '../../../chain/maya/config';
+import { getPreSigningHashes } from '../../../chain/tx/utils/getPreSigningHashes';
+import { assertSignature } from '../../../chain/utils/assertSignature';
+import { generateSignatureWithRecoveryId } from '../../../chain/utils/generateSignatureWithRecoveryId';
+import { getCoinType } from '../../../chain/walletCore/getCoinType';
+import { hexEncode } from '../../../chain/walletCore/hexEncode';
+import { BlockchainService } from '../BlockchainService';
 
 export class BlockchainServiceMaya
   extends BlockchainService
   implements IBlockchainService
 {
-  createKeysignPayload(
-    obj: ITransaction | ISendTransaction | ISwapTransaction,
-    localPartyId: string,
-    publicKeyEcdsa: string
-  ): KeysignPayload {
-    const payload: KeysignPayload = super.createKeysignPayload(
-      obj,
-      localPartyId,
-      publicKeyEcdsa
-    );
-    const specific = new MAYAChainSpecific();
-    const gasInfoSpecific: SpecificThorchain =
-      obj.specificTransactionInfo as SpecificThorchain;
-    specific.accountNumber = BigInt(gasInfoSpecific.accountNumber);
-    specific.sequence = BigInt(gasInfoSpecific.sequence);
-
-    switch (obj.transactionType) {
-      case TransactionType.SEND:
-        specific.isDeposit = false;
-
-        break;
-      case TransactionType.DEPOSIT:
-        specific.isDeposit = true;
-
-        break;
-
-      default:
-        throw new Error(`Unsupported transaction type: ${obj.transactionType}`);
-    }
-
-    payload.blockchainSpecific = {
-      case: 'mayaSpecific',
-      value: specific,
-    };
-
-    return payload;
-  }
-
   async getPreSignedInputData(
     keysignPayload: KeysignPayload
   ): Promise<Uint8Array> {
     const walletCore = this.walletCore;
-    const coinType = walletCore.CoinType.thorchain;
+    const coinType = getCoinType({
+      walletCore,
+      chain: this.chain,
+    });
     if (keysignPayload.coin?.chain !== Chain.MayaChain.toString()) {
       throw new Error('Invalid chain');
     }
 
     const fromAddr = walletCore.AnyAddress.createBech32(
       keysignPayload.coin.address,
-      walletCore.CoinType.thorchain,
+      coinType,
       'maya'
     );
 
@@ -87,8 +52,10 @@ export class BlockchainServiceMaya
       throw new Error(`${keysignPayload.coin.address} is invalid`);
     }
 
-    const thorchainSpecific = keysignPayload.blockchainSpecific
-      .value as unknown as MAYAChainSpecific;
+    const mayaSpecific = getBlockchainSpecificValue(
+      keysignPayload.blockchainSpecific,
+      'mayaSpecific'
+    );
 
     const pubKeyData = Buffer.from(keysignPayload.coin.hexPublicKey, 'hex');
     if (!pubKeyData) {
@@ -98,7 +65,7 @@ export class BlockchainServiceMaya
     let thorchainCoin = TW.Cosmos.Proto.THORChainCoin.create({});
     let message: TW.Cosmos.Proto.Message[];
 
-    if (thorchainSpecific.isDeposit) {
+    if (mayaSpecific.isDeposit) {
       thorchainCoin = TW.Cosmos.Proto.THORChainCoin.create({
         asset: TW.Cosmos.Proto.THORChainAsset.create({
           chain: 'MAYA',
@@ -159,13 +126,13 @@ export class BlockchainServiceMaya
       publicKey: new Uint8Array(pubKeyData),
       signingMode: SigningMode.Protobuf,
       chainId: 'mayachain-mainnet-v1',
-      accountNumber: new Long(Number(thorchainSpecific.accountNumber)),
-      sequence: new Long(Number(thorchainSpecific.sequence)),
+      accountNumber: new Long(Number(mayaSpecific.accountNumber)),
+      sequence: new Long(Number(mayaSpecific.sequence)),
       mode: BroadcastMode.SYNC,
       memo: keysignPayload.memo || '',
       messages: message,
       fee: TW.Cosmos.Proto.Fee.create({
-        gas: new Long(2000000000),
+        gas: new Long(Number(mayaConfig.fee)),
       }),
     });
 
@@ -173,75 +140,60 @@ export class BlockchainServiceMaya
   }
 
   async getSignedTransaction(
-    vaultHexPublicKey: string,
-    vaultHexChainCode: string,
-    data: KeysignPayload | Uint8Array,
+    publicKey: PublicKey,
+    txInputData: Uint8Array,
     signatures: { [key: string]: tss.KeysignResponse }
   ): Promise<SignedTransactionResult> {
     const walletCore = this.walletCore;
-    let inputData: Uint8Array;
-    if (data instanceof Uint8Array) {
-      inputData = data;
-    } else {
-      inputData = await this.getPreSignedInputData(data);
-    }
 
-    const coinType = walletCore.CoinType.thorchain;
+    const coinType = getCoinType({
+      walletCore,
+      chain: this.chain,
+    });
 
-    const addressService = AddressServiceFactory.createAddressService(
-      Chain.MayaChain,
-      walletCore
-    );
-    const publicKey = await addressService.getPublicKey(
-      vaultHexPublicKey,
-      '',
-      vaultHexChainCode
-    );
     const publicKeyData = publicKey.data();
 
-    try {
-      const hashes = walletCore.TransactionCompiler.preImageHashes(
+    const allSignatures = walletCore.DataVector.create();
+    const publicKeys = walletCore.DataVector.create();
+    const [dataHash] = getPreSigningHashes({
+      walletCore,
+      chain: Chain.MayaChain,
+      txInputData,
+    });
+
+    const signature = generateSignatureWithRecoveryId({
+      walletCore: this.walletCore,
+      signature:
+        signatures[hexEncode({ value: dataHash, walletCore: this.walletCore })],
+    });
+
+    assertSignature({
+      publicKey,
+      message: dataHash,
+      signature,
+    });
+
+    allSignatures.add(signature);
+    publicKeys.add(publicKeyData);
+    const compileWithSignatures =
+      walletCore.TransactionCompiler.compileWithSignatures(
         coinType,
-        inputData
+        txInputData,
+        allSignatures,
+        publicKeys
       );
-      const preSigningOutput = TxCompiler.Proto.PreSigningOutput.decode(hashes);
-      const allSignatures = walletCore.DataVector.create();
-      const publicKeys = walletCore.DataVector.create();
-      const signatureProvider = new SignatureProvider(walletCore, signatures);
-      const signature = signatureProvider.getSignatureWithRecoveryId(
-        preSigningOutput.dataHash
-      );
-      if (!publicKey.verify(signature, preSigningOutput.dataHash)) {
-        throw new Error('Invalid signature');
-      }
-      allSignatures.add(signature);
-      publicKeys.add(publicKeyData);
-      const compileWithSignatures =
-        walletCore.TransactionCompiler.compileWithSignatures(
-          coinType,
-          inputData,
-          allSignatures,
-          publicKeys
-        );
-      const output = TW.Cosmos.Proto.SigningOutput.decode(
-        compileWithSignatures
-      );
-      const serializedData = output.serialized;
-      const parsedData = JSON.parse(serializedData);
-      const txBytes = parsedData.tx_bytes;
-      const decodedTxBytes = Buffer.from(txBytes, 'base64');
-      const hash = createHash('sha256')
-        .update(decodedTxBytes as any)
-        .digest('hex');
-      const result = new SignedTransactionResult(
-        serializedData,
-        hash,
-        undefined
-      );
-      return result;
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
+    const output = TW.Cosmos.Proto.SigningOutput.decode(compileWithSignatures);
+    const serializedData = output.serialized;
+    const parsedData = JSON.parse(serializedData);
+    const txBytes = parsedData.tx_bytes;
+    const decodedTxBytes = Buffer.from(txBytes, 'base64');
+    const hash = createHash('sha256')
+      .update(decodedTxBytes as any)
+      .digest('hex');
+
+    return {
+      rawTx: serializedData,
+      txHash: hash,
+    };
   }
 }

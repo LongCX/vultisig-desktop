@@ -3,9 +3,8 @@ import { addMinutes } from 'date-fns';
 import { Coin } from '../../../../../gen/vultisig/keysign/v1/coin_pb';
 import { THORChainSwapPayload } from '../../../../../gen/vultisig/keysign/v1/thorchain_swap_payload_pb';
 import { convertDuration } from '../../../../../lib/utils/time/convertDuration';
-import { SwapPayload, SwapPayloadType } from '../../../../../model/transaction';
+import { KeysignSwapPayload } from '../../../../keysign/KeysignSwapPayload';
 import { fromChainAmount } from '../../../../utils/fromChainAmount';
-import { toChainAmount } from '../../../../utils/toChainAmount';
 import { nativeSwapStreamingInterval } from '../../NativeSwapChain';
 import { NativeSwapQuote } from '../../NativeSwapQuote';
 
@@ -13,7 +12,7 @@ type Input = {
   quote: NativeSwapQuote;
   fromAddress: string;
   fromCoin: Coin;
-  amount: number;
+  amount: bigint;
   toCoin: Coin;
 };
 
@@ -23,21 +22,21 @@ export const thorchainSwapQuoteToSwapPayload = ({
   fromCoin,
   amount,
   toCoin,
-}: Input): SwapPayload => {
+}: Input): KeysignSwapPayload => {
   const isAffiliate =
     !!quote.fees.affiliate && Number(quote.fees.affiliate) > 0;
 
   const streamingInterval = nativeSwapStreamingInterval[quote.swapChain];
 
   return {
-    case: SwapPayloadType.THORCHAIN,
+    case: 'thorchainSwapPayload',
     value: new THORChainSwapPayload({
       fromAddress,
       fromCoin,
       toCoin,
       vaultAddress: quote.inbound_address ?? fromCoin.address,
       routerAddress: quote.router,
-      fromAmount: toChainAmount(amount, fromCoin.decimals).toString(),
+      fromAmount: amount.toString(),
       toAmountDecimal: fromChainAmount(
         quote.expected_amount_out,
         toCoin.decimals

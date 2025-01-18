@@ -1,17 +1,19 @@
-import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
+import { KeysignMessagePayload } from '../../../chain/keysign/KeysignMessagePayload';
 import { CurrentTxHashProvider } from '../../../chain/state/currentTxHash';
+import { TxOverviewPanel } from '../../../chain/tx/components/TxOverviewPanel';
+import { TxOverviewPrimaryRow } from '../../../chain/tx/components/TxOverviewPrimaryRow';
+import { MatchRecordUnion } from '../../../lib/ui/base/MatchRecordUnion';
+import { Button } from '../../../lib/ui/buttons/Button';
 import { ProgressLine } from '../../../lib/ui/flow/ProgressLine';
 import { VStack } from '../../../lib/ui/layout/Stack';
 import { ComponentWithBackActionProps } from '../../../lib/ui/props';
 import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { shouldBePresent } from '../../../lib/utils/assert/shouldBePresent';
 import { extractErrorMsg } from '../../../lib/utils/error/extractErrorMsg';
-import { Chain } from '../../../model/chain';
-import { useAssertWalletCore } from '../../../providers/WalletCoreProvider';
-import { BlockchainServiceFactory } from '../../../services/Blockchain/BlockchainServiceFactory';
+import { makeAppPath } from '../../../navigation';
 import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState';
 import { PageContent } from '../../../ui/page/PageContent';
 import { PageHeader } from '../../../ui/page/PageHeader';
@@ -20,55 +22,61 @@ import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
 import { KeygenNetworkReminder } from '../../keygen/shared/KeygenNetworkReminder';
 import { MatchKeygenSessionStatus } from '../../keygen/shared/MatchKeygenSessionStatus';
 import { PendingKeygenMessage } from '../../keygen/shared/PendingKeygenMessage';
-import { useCurrentSessionId } from '../../keygen/shared/state/currentSessionId';
-import { useCurrentServerUrl } from '../../keygen/state/currentServerUrl';
-import { useCurrentHexEncryptionKey } from '../../setup/state/currentHexEncryptionKey';
-import { useCurrentVault } from '../../state/currentVault';
+import { KeysignCustomMessageInfo } from '../join/verify/KeysignCustomMessageInfo';
 import { KeysignSigningState } from './KeysignSigningState';
-import { KeysignSummaryStep } from './KeysignSummaryStep';
-import { useCurrentKeysignMsgs } from './state/currentKeysignMsgs';
-import { useKeysignPayload } from './state/keysignPayload';
+import { KeysignTxOverview } from './KeysignTxOverview';
+import { useKeysignMutation } from './mutations/useKeysignMutation';
+import { WithProgressIndicator } from './WithProgressIndicator';
+
+type KeysignSigningStepProps = {
+  payload: KeysignMessagePayload;
+} & Partial<ComponentWithBackActionProps>;
 
 export const KeysignSigningStep = ({
   onBack,
-}: Partial<ComponentWithBackActionProps>) => {
-  const payload = useKeysignPayload();
-  const msgs = useCurrentKeysignMsgs();
-  const walletCore = useAssertWalletCore();
-  const vault = useCurrentVault();
-  const sessionId = useCurrentSessionId();
-  const encryptionKeyHex = useCurrentHexEncryptionKey();
-  const serverUrl = useCurrentServerUrl();
+  payload,
+}: KeysignSigningStepProps) => {
   const { t } = useTranslation();
 
-  const { mutate: startKeysign, ...mutationStatus } = useMutation({
-    mutationFn: async () => {
-      const { chain } = shouldBePresent(payload.coin);
-      const blockchainService = BlockchainServiceFactory.createService(
-        chain as Chain,
-        walletCore
-      );
-
-      return blockchainService.signAndBroadcastTransaction(
-        vault,
-        msgs,
-        sessionId,
-        encryptionKeyHex,
-        serverUrl,
-        payload
-      );
-    },
-  });
+  const { mutate: startKeysign, ...mutationStatus } =
+    useKeysignMutation(payload);
 
   useEffect(() => startKeysign(), [startKeysign]);
 
   return (
     <MatchQuery
       value={mutationStatus}
-      success={txHash => (
-        <CurrentTxHashProvider value={txHash}>
-          <KeysignSummaryStep />
-        </CurrentTxHashProvider>
+      success={value => (
+        <>
+          <PageHeader title={<PageHeaderTitle>{t('done')}</PageHeaderTitle>} />
+          <PageContent>
+            <WithProgressIndicator value={1}>
+              <TxOverviewPanel>
+                <MatchRecordUnion
+                  value={payload}
+                  handlers={{
+                    keysign: payload => (
+                      <CurrentTxHashProvider value={value}>
+                        <KeysignTxOverview value={payload} />
+                      </CurrentTxHashProvider>
+                    ),
+                    custom: payload => (
+                      <>
+                        <KeysignCustomMessageInfo value={payload} />
+                        <TxOverviewPrimaryRow title={t('signature')}>
+                          {value}
+                        </TxOverviewPrimaryRow>
+                      </>
+                    ),
+                  }}
+                />
+              </TxOverviewPanel>
+            </WithProgressIndicator>
+            <Link to={makeAppPath('vault')}>
+              <Button as="div">{t('complete')}</Button>
+            </Link>
+          </PageContent>
+        </>
       )}
       error={error => (
         <FullPageFlowErrorState

@@ -1,9 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { createCoin } from '../../coin/utils/createCoin';
 import { useInvalidateQueries } from '../../lib/ui/query/hooks/useInvalidateQueries';
 import { CoinMeta } from '../../model/coin-meta';
 import { useAssertWalletCore } from '../../providers/WalletCoreProvider';
 import { CoinServiceFactory } from '../../services/Coin/CoinServiceFactory';
+import { getVaultPublicKey } from '../publicKey/getVaultPublicKey';
 import { vaultsQueryKey } from '../queries/useVaultsQuery';
 import { useCurrentVault } from '../state/currentVault';
 
@@ -19,25 +21,26 @@ export const useSaveCoinMutation = () => {
       console.error('save coin error: ', error);
     },
     mutationFn: async (coinMeta: CoinMeta) => {
-      try {
-        const coinService = CoinServiceFactory.createCoinService(
-          coinMeta.chain,
-          walletCore
-        );
+      const coinService = CoinServiceFactory.createCoinService(
+        coinMeta.chain,
+        walletCore
+      );
 
-        const coin = await coinService.createCoin(
-          coinMeta,
-          vault.public_key_ecdsa || '',
-          vault.public_key_eddsa || '',
-          vault.hex_chain_code || ''
-        );
+      const publicKey = await getVaultPublicKey({
+        vault,
+        chain: coinMeta.chain,
+        walletCore,
+      });
 
-        await coinService.saveCoin(coin, vault);
+      const coin = createCoin({
+        coinMeta,
+        publicKey,
+        walletCore,
+      });
 
-        await invalidate(vaultsQueryKey);
-      } catch (error) {
-        console.error('save coin error: ', error);
-      }
+      await coinService.saveCoin(coin, vault);
+
+      await invalidate(vaultsQueryKey);
     },
   });
 };

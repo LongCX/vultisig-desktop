@@ -1,14 +1,15 @@
 import { NativeSwapEnabledChain } from '../../../chain/swap/native/NativeSwapChain';
 import { getNativeSwapDecimals } from '../../../chain/swap/native/utils/getNativeSwapDecimals';
 import { getChainFeeCoin } from '../../../chain/tx/fee/utils/getChainFeeCoin';
-import { fromChainAmount } from '../../../chain/utils/fromChainAmount';
+import { getFeeAmount } from '../../../chain/tx/fee/utils/getFeeAmount';
 import { getCoinMetaKey } from '../../../coin/utils/coinMeta';
 import { useTransformQueriesData } from '../../../lib/ui/query/hooks/useTransformQueriesData';
 import { matchRecordUnion } from '../../../lib/utils/matchRecordUnion';
 import { useFromCoin } from '../state/fromCoin';
 import { useToCoin } from '../state/toCoin';
+import { SwapFees } from '../types/SwapFee';
+import { useSwapChainSpecificQuery } from './useSwapChainSpecificQuery';
 import { useSwapQuoteQuery } from './useSwapQuoteQuery';
-import { useSwapSpecificTxInfoQuery } from './useSwapSpecificTxInfoQuery';
 
 export const useSwapFeesQuery = () => {
   const swapQuoteQuery = useSwapQuoteQuery();
@@ -16,46 +17,46 @@ export const useSwapFeesQuery = () => {
   const [fromCoinKey] = useFromCoin();
   const [toCoinKey] = useToCoin();
 
-  const txInfoQuery = useSwapSpecificTxInfoQuery();
+  const chainSpecificQuery = useSwapChainSpecificQuery();
 
   return useTransformQueriesData(
     {
       swapQuote: swapQuoteQuery,
-      txInfo: txInfoQuery,
+      chainSpecific: chainSpecificQuery,
     },
-    ({ swapQuote, txInfo }) => {
+    ({ swapQuote, chainSpecific }): SwapFees => {
       const fromFeeCoin = getChainFeeCoin(fromCoinKey.chain);
 
       return matchRecordUnion(swapQuote, {
-        native: ({ fees }) => {
+        native: ({ fees }): SwapFees => {
           const decimals = getNativeSwapDecimals(
             fromCoinKey.chain as NativeSwapEnabledChain
           );
 
-          return [
-            {
+          const feeAmount = getFeeAmount(chainSpecific);
+
+          return {
+            swap: {
               ...toCoinKey,
-              amount: fromChainAmount(fees.total, decimals),
+              amount: BigInt(fees.total),
+              decimals,
             },
-            {
+            network: {
               ...getCoinMetaKey(fromFeeCoin),
-              amount: fromChainAmount(
-                BigInt(Math.round(txInfo.fee)),
-                fromFeeCoin.decimals
-              ),
+              amount: feeAmount,
+              decimals: getChainFeeCoin(fromCoinKey.chain).decimals,
+              chainSpecific,
             },
-          ];
+          };
         },
-        oneInch: ({ tx: { gasPrice, gas } }) => {
-          return [
-            {
+        oneInch: ({ tx: { gasPrice, gas } }): SwapFees => {
+          return {
+            swap: {
               ...getCoinMetaKey(fromFeeCoin),
-              amount: fromChainAmount(
-                BigInt(gasPrice) * BigInt(gas),
-                fromFeeCoin.decimals
-              ),
+              amount: BigInt(gasPrice) * BigInt(gas),
+              decimals: fromFeeCoin.decimals,
             },
-          ];
+          };
         },
       });
     }

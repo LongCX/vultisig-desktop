@@ -11,6 +11,7 @@ export const de = {
     'Vultisig ist eine Wallet ohne Seed-Phrases. Stattdessen verwendet es einfach zu verwaltende Fragmente. Jedes Gerät hat sein eigenes einzigartiges Fragment, das separat gesichert werden muss.',
   create_new_vault: 'Neuen Tresor erstellen',
   import_existing_vault: 'Bestehenden Tresor importieren',
+  required_field_missing: 'Erforderliches Feld fehlt',
   email_confirmation_code_label:
     'Geben Sie den Code ein, den Sie mit Ihrem Backup per E-Mail erhalten haben',
   email_confirmation_code_error: 'Ungültiger Code',
@@ -214,7 +215,7 @@ export const de = {
   vault_backup_page_verified_password_error: 'Passwörter müssen übereinstimmen',
   vault_backup_page_submit_button_text: 'Speichern',
   vault_backup_page_submit_loading_button_text: 'Speichern...',
-  vault_backup_page_skip_button_text: 'Überspringen',
+  vault_backup_page_skip_button_text: 'Passwort überspringen',
   vault_backup_page_password_info:
     'Bewahren Sie niemals Tresorfragmente von verschiedenen Geräten am selben Ort auf',
   vault_rename_page_name_error:
@@ -317,6 +318,7 @@ export const de = {
   from: 'Von',
   memo: 'Memo',
   amount: 'Betrag',
+  unbondAmount: 'Entkoppelungsbetrag',
   value: 'Wert',
   gas: 'Gas',
   network_fee: 'Netzwerkgebühr',
@@ -403,51 +405,6 @@ export const de = {
   max: 'Max',
   insufficient_funds_to_pay_fee:
     'Das Guthaben reicht nicht aus, um die Transaktionsgebühr zu decken.',
-  'page.swap.quote.amount.error':
-    'Für die gewünschte Menge und das gewünschte Paar ist kein Angebot verfügbar.',
-  'page.swap.info.title': 'Was ist Asset-Swapping?',
-  'page.swap.info.how.it.work': 'Wie funktioniert es?',
-  'page.swap.info.select.assets': 'Assets auswählen',
-  'page.swap.info.select.assets.description':
-    'Wählen Sie zunächst die beiden Vermögenswerte aus, die Sie tauschen möchten, z. B. Bitcoin gegen Ethereum.',
-  'page.swap.info.check.rates': 'Preise prüfen',
-  'page.swap.info.check.rates.description':
-    'Auf unserer Plattform werden der aktuelle Wechselkurs und alle damit verbundenen Gebühren angezeigt. Die Kurse werden durch Marktbedingungen und Liquidität bestimmt.',
-  'page.swap.info.confirm.swap': 'Tausch bestätigen',
-  'page.swap.info.confirm.swap.description':
-    'Sobald Sie den Tausch bestätigt haben, verarbeitet das dezentrale Netzwerk von Vultisig die Transaktion sicher.',
-  'page.swap.info.receive.assets': 'Vermögenswerte empfangen',
-  'page.swap.info.receive.assets.description':
-    'Der getauschte Vermögenswert wird in der Regel innerhalb weniger Minuten direkt in Ihr Portemonnaie eingezahlt.',
-  'page.swap.info.swap.benefits.title':
-    'Vorteile der Verwendung von Vultisig zum Tauschen',
-  'page.swap.info.swap.benefits.decentralised': 'Dezentral',
-  'page.swap.info.swap.benefits.decentralised.description':
-    'Wir arbeiten mit vollständig dezentralisierten Protokollen, um Sicherheit und Transparenz zu gewährleisten.',
-  'page.swap.info.swap.benefits.speed': 'Geschwindigkeit',
-  'page.swap.info.swap.benefits.speed.description':
-    'Transaktionen werden schnell verarbeitet und ermöglichen ein nahtloses Austauscherlebnis.',
-  'page.swap.info.swap.benefits.accessibility': 'Zugänglichkeit',
-  'page.swap.info.swap.benefits.accessibility.description':
-    'Tauschen Sie eine große Auswahl an Kryptowährungen ohne die Notwendigkeit traditioneller Vermittler.',
-  'page.swap.info.swap.benefits.liquidity': 'Liquidität',
-  'page.swap.info.swap.benefits.liquidity.description':
-    'Vultisig sorgt für Liquidität und erleichtert den Tausch großer Beträge zu Marktkursen.',
-  'page.swap.info.tips': 'Tipps für neue Benutzer',
-  'page.swap.info.tips.start': 'Fangen Sie klein an',
-  'page.swap.info.tips.start.description':
-    'Wenn Sie neu beim Tauschen sind, sollten Sie mit einer kleinen Transaktion beginnen, um sich mit dem Vorgang vertraut zu machen.',
-  'page.swap.info.tips.stay.informed': 'Bleiben Sie informiert',
-  'page.swap.info.tips.stay.informed.description':
-    'Behalten Sie Markttrends und -preise im Auge. Der Zeitpunkt kann sich auf den Wert auswirken, den Sie erhalten.',
-  'page.swap.info.tips.security': 'Sicherheit',
-  'page.swap.info.tips.security.description':
-    'Achten Sie stets auf die Sicherheit Ihres Wallets und Ihrer privaten Schlüssel.',
-  'page.swap.receiver.optional': 'Empfänger (optional)',
-  'page.swap.halted.state':
-    'Der Handel für das ausgewählte Paar ist angehalten, der Tausch kann nicht durchgeführt werden',
-  'page.swap.not.possible':
-    'Ein Wechsel zu einem Smart Contract ist nicht möglich! Geben Sie eine andere Empfängeradresse ein.',
   swap_terms_0: 'Der Tauschbetrag ist korrekt',
   swap_terms_1:
     'Ich bin mit dem Betrag einverstanden, den ich nach dem Tausch erhalte',
@@ -542,6 +499,7 @@ export const de = {
     },
     unbond: {
       labels: {
+        unbondAmount: 'Entkoppelungsbetrag',
         nodeAddress: 'Knotenadresse',
         amount: 'Betrag',
         provider: 'Anbieter',
@@ -668,5 +626,25 @@ export const de = {
   swap: 'Tauschen',
   allowance: 'Zuschuss',
   provider: 'Anbieter',
-  estimated_fees: 'Geschätzte Gebühren',
+  swap_tracking_link: 'Tracking-Link austauschen',
+  swap_fee: 'Swap-Gebühr',
+  and: 'Und',
+  approve: 'Genehmigen',
+  action: 'Aktion',
+  from_asset: 'Von Anlagegut',
+  to_asset: 'Zum Vermögenswert',
+  allowance_spender: 'Taschengeld-Ausgeber',
+  allowance_amount: 'Freibetrag',
+  method: 'Verfahren',
+  message: 'Nachricht',
+  signature: 'Unterschrift',
+  signing_method: 'Signiermethode',
+  message_to_sign: 'Zu unterzeichnende Nachricht',
+  sign_custom_message: 'Benutzerdefinierte Nachricht signieren',
+  sign_message: 'Nachricht signieren',
+  method_required: 'Signaturmethode ist erforderlich',
+  message_required: 'Nachricht ist erforderlich',
+  something_went_wrong: 'Da ist etwas schiefgelaufen',
+  report_error: 'Fehler melden',
+  go_to_home_page: 'Zur Startseite',
 };

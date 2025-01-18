@@ -36,6 +36,7 @@ export const en = {
   internet: 'Internet',
   choose_coins: 'Choose coins',
   choose_chains: 'Choose chains',
+  required_field_missing: 'Required field missing',
   local: 'Local',
   looking_for_devices: 'Looking for devices... ',
   more_devices: 'more devices ...',
@@ -79,6 +80,8 @@ export const en = {
   name_your_vault: 'Name your Vault',
   join: 'Join',
   done: 'Done',
+  and: 'and',
+  approve: 'Approve',
   information_note1:
     'Keep devices on the same WiFi Network, correct vault and pair devices.',
   information_note2: 'Make sure no other devices are running Vultisig.',
@@ -214,7 +217,7 @@ export const en = {
   vault_backup_page_verified_password_error: 'Passwords must match',
   vault_backup_page_submit_button_text: 'Save',
   vault_backup_page_submit_loading_button_text: 'Saving...',
-  vault_backup_page_skip_button_text: 'Skip',
+  vault_backup_page_skip_button_text: 'Skip Password',
   vault_backup_page_password_info:
     'Never store Vault Shares from different devices in the same location',
   vault_rename_page_name_error:
@@ -310,6 +313,7 @@ export const en = {
   from: 'From',
   memo: 'Memo',
   amount: 'Amount',
+  unbondAmount: 'Unbond Amount',
   save_changes: 'Save Changes',
   value: 'Value',
   gas: 'Gas',
@@ -318,6 +322,7 @@ export const en = {
   gwei: 'Gwei',
   total_fee: 'Total Fee',
   network_fee: 'Network fee',
+  swap_fee: 'Swap fee',
   network_rate: 'Network rate',
   network_rate_required: 'Network rate is required',
   advanced: 'Advanced',
@@ -370,6 +375,9 @@ export const en = {
   secureVault: 'Secure Vault',
   active: 'Active',
   sign: 'Sign',
+  sign_custom_message: 'Sign custom message',
+  sign_message: 'Sign message',
+  action: 'Action',
   fast_vault_setup_prop_0: 'Single Device Setup',
   fast_vault_setup_prop_1: 'Transaction Alerts & Policies',
   fast_vault_setup_prop_2: 'Vault Backup Emailed',
@@ -413,55 +421,10 @@ export const en = {
   insufficient_balance: 'Insufficient balance',
   insufficient_funds_to_pay_fee:
     'Insufficient balance to cover transaction fee.',
-  'page.swap.quote.amount.error':
-    'No quote available for requested amount and pair.',
-  'page.swap.info.title': 'What is asset swapping?',
-  'page.swap.info.how.it.work': 'How Does It Work?',
-  'page.swap.info.select.assets': 'Select Assets',
-  'page.swap.info.select.assets.description':
-    'Begin by choosing the two assets you wish to swap, such as Bitcoin for Ethereum.',
-  'page.swap.info.check.rates': 'Check Rates',
-  'page.swap.info.check.rates.description':
-    'Our platform shows the current exchange rate and any associated fees. Rates are determined by market conditions and liquidity.',
-  'page.swap.info.confirm.swap': 'Confirm Swap',
-  'page.swap.info.confirm.swap.description':
-    "Once you confirm the swap, Vultisig's decentralized network securely processes the transaction.",
-  'page.swap.info.receive.assets': 'Receive Assets',
-  'page.swap.info.receive.assets.description':
-    'The swapped asset is deposited directly into your wallet, typically within minutes.',
-  'page.swap.info.swap.benefits.title':
-    'Benefits of using Vultisig for swapping',
-  'page.swap.info.swap.benefits.decentralised': 'Decentralised',
-  'page.swap.info.swap.benefits.decentralised.description':
-    'We operate on fully decentralised protocols, ensuring security and transparency.',
-  'page.swap.info.swap.benefits.speed': 'Speed',
-  'page.swap.info.swap.benefits.speed.description':
-    'Transactions are processed quickly, providing a seamless swapping experience.',
-  'page.swap.info.swap.benefits.accessibility': 'Accessibility',
-  'page.swap.info.swap.benefits.accessibility.description':
-    'Swap a wide range of cryptocurrencies without the need for traditional intermediaries.',
-  'page.swap.info.swap.benefits.liquidity': 'Liquidity',
-  'page.swap.info.swap.benefits.liquidity.description':
-    'Vultisig ensures liquidity, making it easier to swap large amounts at market rates.',
-  'page.swap.info.tips': 'Tips for New Users',
-  'page.swap.info.tips.start': 'Start Small',
-  'page.swap.info.tips.start.description':
-    'If you’re new to swapping, consider starting with a small transaction to familiarise yourself with the process.',
-  'page.swap.info.tips.stay.informed': 'Stay Informed',
-  'page.swap.info.tips.stay.informed.description':
-    'Keep an eye on market trends and rates. Timing can impact the value you receive.',
-  'page.swap.info.tips.security': 'Security',
-  'page.swap.info.tips.security.description':
-    'Always ensure the security of your wallet and private keys.',
-  'page.swap.receiver.optional': 'Receiver (optional)',
-  'page.swap.halted.state':
-    "Trading is halted for selected pair, can't process swap",
-  'page.swap.not.possible':
-    'Swapping to a smart contract is not possible! Enter a different recipient address.',
   swap: 'Swap',
+  swap_tracking_link: 'Swap tracking link',
   allowance: 'Allowance',
   provider: 'Provider',
-  estimated_fees: 'Estimated Fees',
   swap_terms_0: 'The swap amount is correct',
   swap_terms_1: 'I agree with the amount I will receive after the swap',
   swap_agree_terms: 'You must agree with terms before proceeding',
@@ -533,6 +496,9 @@ export const en = {
   vote: 'Vote',
   stake: 'Stake',
   unstake: 'Unstake',
+  method: 'Method',
+  message: 'Message',
+  signature: 'Signature',
   chainFunctions: {
     amountExceeded: 'Amount exceeds available balance',
     requiredFieldMissing: 'Required field missing',
@@ -588,6 +554,7 @@ export const en = {
         nodeAddress: 'Node Address',
         amount: 'Amount',
         provider: 'Provider',
+        unbondAmount: 'Unbond Amount',
       },
       validations: {
         nodeAddressMinLength: 'Node Address is required',
@@ -660,8 +627,19 @@ export const en = {
       },
     },
   },
+  something_went_wrong: 'Something went wrong',
+  report_error: 'Report Error',
+  go_to_home_page: 'Go to Home Page',
+  signing_method: 'Signing Method',
+  message_to_sign: 'Message to sign',
+  method_required: 'Signing method is required',
+  message_required: 'Message is required',
   saving_vault: 'Saving Vault...',
   scan_with_devices: 'Scan with devices to join the vault generation',
   scan_with_devices_to_sign:
     'Scan with devices to participate in signing the transaction',
+  from_asset: 'From Asset',
+  to_asset: 'To Asset',
+  allowance_spender: 'Allowance spender',
+  allowance_amount: 'Allowance amount',
 };

@@ -13,15 +13,16 @@ import { PageHeader } from '../../../ui/page/PageHeader';
 import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
 import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
 import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator';
+import { useCurrentVaultCoin } from '../../state/currentVault';
+import { ChainAction } from '../ChainAction';
 import { DepositConfirmButton } from '../DepositConfirmButton';
-import {
-  ChainAction,
-  requiredFieldsPerChainAction,
-} from '../DepositForm/chainOptionsConfig';
+import { requiredFieldsPerChainAction } from '../DepositForm/chainOptionsConfig';
 import { DepositFee } from '../fee/DepositFee';
 import { DepositFiatFee } from '../fee/DepositFiatFee';
+import { useCurrentDepositCoin } from '../hooks/useCurrentDepositCoin';
 import { useSender } from '../hooks/useSender';
 import { StrictText, StrictTextContrast } from './DepositVerify.styled';
+import { getFormattedFormData } from './utils';
 
 type DepositVerifyProps = {
   depositFormData: Record<string, unknown>;
@@ -34,6 +35,14 @@ export const DepositVerify: FC<DepositVerifyProps> = ({
   depositFormData,
   selectedChainAction,
 }) => {
+  const [coinKey] = useCurrentDepositCoin();
+  const coin = useCurrentVaultCoin(coinKey);
+  const formattedDepositFormData = getFormattedFormData(
+    depositFormData,
+    selectedChainAction,
+    coin
+  );
+
   const sender = useSender();
   const { t } = useTranslation();
   const actionFields = selectedChainAction
@@ -56,13 +65,17 @@ export const DepositVerify: FC<DepositVerifyProps> = ({
               <StrictTextContrast>{sender}</StrictTextContrast>
             </TxOverviewColumn>
             {actionFields.map(field => {
-              if (!depositFormData[field.name]) return null;
+              if (!formattedDepositFormData[field.name]) return null;
+
               return field.type === 'number' || field.type === 'percentage' ? (
                 <TxOverviewRowDepositsFlow key={field.name}>
                   <Text size={18} weight={700}>
                     {t(field.label)}
                   </Text>
-                  <StrictText>{String(depositFormData[field.name])}</StrictText>
+                  <StrictText>
+                    {String(formattedDepositFormData[field.name])}{' '}
+                    {field.name === 'amount' && coin.ticker}
+                  </StrictText>
                 </TxOverviewRowDepositsFlow>
               ) : (
                 <TxOverviewColumn key={field.name}>
@@ -70,17 +83,27 @@ export const DepositVerify: FC<DepositVerifyProps> = ({
                     {t(field.label)}
                   </Text>
                   <StrictTextContrast>
-                    {String(depositFormData[field.name])}
+                    {String(formattedDepositFormData[field.name])}
                   </StrictTextContrast>
                 </TxOverviewColumn>
               );
             })}
+            {selectedChainAction === 'leave' && (
+              <TxOverviewRowDepositsFlow>
+                <Text size={18} weight={700}>
+                  {t('amount')}
+                </Text>
+                <StrictText>
+                  {String(formattedDepositFormData.amount)} {coin.ticker}
+                </StrictText>
+              </TxOverviewRowDepositsFlow>
+            )}
             <TxOverviewRow key="memo">
               <Text size={18} weight={700}>
                 {t('chainFunctions.memo')}
               </Text>
               <StrictTextContrast>
-                {String(depositFormData['memo'])}
+                {String(formattedDepositFormData['memo'])}
               </StrictTextContrast>
             </TxOverviewRow>
             <TxOverviewRow>
@@ -93,7 +116,7 @@ export const DepositVerify: FC<DepositVerifyProps> = ({
         </WithProgressIndicator>
         <DepositConfirmButton
           action={selectedChainAction}
-          depositFormData={depositFormData}
+          depositFormData={formattedDepositFormData}
         />
       </PageContent>
     </>

@@ -4,8 +4,6 @@ WARNING: Never change the string of the enum values. It must match with IOS/Andr
 
 */
 
-import { isOneOf } from '../lib/utils/array/isOneOf';
-
 export enum EvmChain {
   Arbitrum = 'Arbitrum',
   Avalanche = 'Avalanche',
@@ -18,19 +16,6 @@ export enum EvmChain {
   Polygon = 'Polygon',
   Zksync = 'Zksync',
 }
-
-export const evmChainIds: Record<EvmChain, number> = {
-  [EvmChain.Arbitrum]: 42161,
-  [EvmChain.Avalanche]: 43114,
-  [EvmChain.Base]: 8453,
-  [EvmChain.CronosChain]: 25,
-  [EvmChain.BSC]: 56,
-  [EvmChain.Blast]: 81457,
-  [EvmChain.Ethereum]: 1,
-  [EvmChain.Optimism]: 10,
-  [EvmChain.Polygon]: 137,
-  [EvmChain.Zksync]: 324,
-};
 
 export enum UtxoChain {
   Bitcoin = 'Bitcoin',
@@ -69,10 +54,6 @@ export const Chain = {
 
 export type Chain = EvmChain | UtxoChain | CosmosChain | OtherChain;
 
-export enum TssKeysignType {
-  ECDSA = 'ECDSA',
-  EdDSA = 'EdDSA',
-}
 export enum TssAction {
   KEYGEN = 'KEYGEN',
   RESHARE = 'RESHARE',
@@ -130,26 +111,4 @@ export const chainKindRecord: Record<Chain, ChainKind> = {
   [OtherChain.Ripple]: 'ripple',
 };
 
-export class ChainUtils {
-  static stringToChain(chain: string): Chain | undefined {
-    return isOneOf(chain, Object.values(Chain));
-  }
-  static stringToTssAction(action: string): TssAction | undefined {
-    return isOneOf(action, Object.values(TssAction));
-  }
-
-  static getTssKeysignType(chain: Chain): TssKeysignType {
-    switch (chain) {
-      case Chain.Solana:
-        return TssKeysignType.EdDSA;
-      case Chain.Polkadot:
-        return TssKeysignType.EdDSA;
-      case Chain.Sui:
-        return TssKeysignType.EdDSA;
-      case Chain.Ton:
-        return TssKeysignType.EdDSA;
-      default:
-        return TssKeysignType.ECDSA;
-    }
-  }
-}
+export const maxSendAmountEnabledChains = Object.values(UtxoChain);

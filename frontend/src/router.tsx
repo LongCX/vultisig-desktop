@@ -2,6 +2,8 @@ import { createBrowserRouter, Outlet } from 'react-router-dom';
 
 import { AddressPage } from './chain/components/address/AddressPage';
 import { DeeplinkPage } from './deeplink/components/DeeplinkPage';
+import { ErrorBoundary } from './errors/components/ErrorBoundary';
+import { FullSizeErrorFallback } from './errors/components/FullSizeErrorFallback';
 import { LauncherObserver } from './launcher/components/LauncherObserver';
 import { appPaths } from './navigation';
 import { CompletedOnboardingOnly } from './onboarding/CompletedOnboardingOnly';
@@ -31,6 +33,7 @@ import { VaultPage } from './vault/components/VaultPage';
 import { DepositPage } from './vault/deposit/DepositPage';
 import { ImportVaultFromFilePage } from './vault/import/components/ImportVaultFromFilePage';
 import { JoinKeygenPage } from './vault/keygen/join/JoinKeygenPage';
+import { SignCustomMessagePage } from './vault/keysign/customMessage/SignCustomMessagePage';
 import { JoinKeysignPage } from './vault/keysign/join/JoinKeysignPage';
 import { StartFastKeysignPage } from './vault/keysign/start/fast/StartFastKeysignPage';
 import { StartKeysignPage } from './vault/keysign/start/StartKeysignPage';
@@ -54,10 +57,10 @@ import { CreateVaultFolderPage } from './vaults/folders/create/CreateVaultFolder
 import { ManageVaultsPage } from './vaults/manage/ManageVaultsPage';
 
 const Root = () => (
-  <>
+  <ErrorBoundary renderFallback={props => <FullSizeErrorFallback {...props} />}>
     <LauncherObserver />
     <Outlet />
-  </>
+  </ErrorBoundary>
 );
 
 export const router = createBrowserRouter([
@@ -365,6 +368,10 @@ export const router = createBrowserRouter([
             <DeeplinkPage />
           </ActiveVaultGuard>
         ),
+      },
+      {
+        path: appPaths.signCustomMessage,
+        element: <SignCustomMessagePage />,
       },
     ],
   },

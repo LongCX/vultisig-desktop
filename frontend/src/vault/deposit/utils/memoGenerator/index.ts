@@ -1,7 +1,9 @@
 import { FieldValues } from 'react-hook-form';
 
+import { getChainFeeCoin } from '../../../../chain/tx/fee/utils/getChainFeeCoin';
 import { MayaChainPool } from '../../../../lib/types/deposit';
-import { ChainAction } from '../../DepositForm/chainOptionsConfig';
+import { Chain } from '../../../../model/chain';
+import { ChainAction } from '../../ChainAction';
 
 interface MemoParams {
   selectedChainAction?: ChainAction;
@@ -32,9 +34,13 @@ export const generateMemo = ({
     return customMemo;
   }
 
-  const action = selectedChainAction?.toUpperCase() || '';
+  const action = selectedChainAction || '';
 
   switch (selectedChainAction) {
+    case 'stake':
+      return 'd';
+    case 'unstake':
+      return 'w';
     case 'withdrawPool':
       // Format: "POOL-:percentage:affiliateFee:fee"
       return `POOL-:${percentage}:dx:0`;
@@ -68,11 +74,15 @@ export const generateMemo = ({
     case 'unbond_with_lp':
       // "UNBOND:bondableAsset:lpUnits:nodeAddress"
       return `UNBOND:${bondableAsset}:${lpUnits}:${nodeAddress}`;
-    case 'unbond':
+    case 'unbond': {
+      const runeDecimals = getChainFeeCoin(Chain.THORChain)?.decimals;
+      const amountInUnits = amount
+        ? Math.round(amount * Math.pow(10, runeDecimals))
+        : 0;
       return provider
-        ? `UNBOND:${nodeAddress}:${amount}:${provider}`
-        : `UNBOND:${nodeAddress}:${amount}`;
-
+        ? `UNBOND:${nodeAddress}:${amountInUnits}:${provider}`
+        : `UNBOND:${nodeAddress}:${amountInUnits}`;
+    }
     default:
       // Default: If nodeAddress present: "ACTION:nodeAddress", else "ACTION"
       return nodeAddress ? `${action}:${nodeAddress}` : action;
