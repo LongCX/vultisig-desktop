@@ -1,20 +1,25 @@
 import { useMutation } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
+import { storage } from '../../../wailsjs/go/models';
 import { AddressPageShyPrompt } from '../../chain/components/address/AddressPageShyPrompt';
 import { ChainEntityIcon } from '../../chain/ui/ChainEntityIcon';
 import { useCopyAddress } from '../../chain/ui/hooks/useCopyAddress';
 import { getChainEntityIconSrc } from '../../chain/utils/getChainEntityIconSrc';
 import { isNativeCoin } from '../../chain/utils/isNativeCoin';
-import { useAutoDiscoverAndSaveTokens } from '../../coin/query/useAutoDiscoverAndSaveTokens';
 import { getBalanceQueryKey } from '../../coin/query/useBalanceQuery';
+import { useSaveCoinsMutation } from '../../coin/query/useSaveCoinsMutation';
+import {
+  getTokensAutoDiscoveryQueryKey,
+  useTokensAutoDiscoveryQuery,
+} from '../../coin/query/useTokensAutoDiscoveryQuery';
+import { coinToStorageCoin } from '../../coin/utils/coin';
+import { createCoin } from '../../coin/utils/createCoin';
 import { getCoinValue } from '../../coin/utils/getCoinValue';
 import { sortCoinsByBalance } from '../../coin/utils/sortCoinsByBalance';
-import {
-  getStorageCoinKey,
-  storageCoinToCoin,
-} from '../../coin/utils/storageCoin';
+import { getStorageCoinKey } from '../../coin/utils/storageCoin';
 import { useGlobalCurrency } from '../../lib/hooks/useGlobalCurrency';
 import { IconButton } from '../../lib/ui/buttons/IconButton';
 import { CopyIcon } from '../../lib/ui/icons/CopyIcon';
@@ -28,9 +33,15 @@ import { Text } from '../../lib/ui/text';
 import { isEmpty } from '../../lib/utils/array/isEmpty';
 import { splitBy } from '../../lib/utils/array/splitBy';
 import { sum } from '../../lib/utils/array/sum';
+import { withoutDuplicates } from '../../lib/utils/array/withoutDuplicates';
 import { formatAmount } from '../../lib/utils/formatAmount';
 import { makeAppPath } from '../../navigation';
+import { useAssertWalletCore } from '../../providers/WalletCoreProvider';
 import { TokensStore } from '../../services/Coin/CoinList';
+import {
+  PersistentStateKey,
+  usePersistentState,
+} from '../../state/persistentState';
 import { PageContent } from '../../ui/page/PageContent';
 import { PageHeader } from '../../ui/page/PageHeader';
 import { PageHeaderBackButton } from '../../ui/page/PageHeaderBackButton';
@@ -39,36 +50,99 @@ import { PageHeaderIconButtons } from '../../ui/page/PageHeaderIconButtons';
 import { PageHeaderTitle } from '../../ui/page/PageHeaderTitle';
 import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware';
 import { VaultPrimaryActions } from '../components/VaultPrimaryActions';
+import { useVaultPublicKeyQuery } from '../publicKey/queries/useVaultPublicKeyQuery';
 import { useVaultAddressQuery } from '../queries/useVaultAddressQuery';
 import { useVaultChainCoinsQuery } from '../queries/useVaultChainCoinsQuery';
-import { useCurrentVaultNativeCoin } from '../state/currentVault';
+import {
+  useCurrentVaultChainCoins,
+  useCurrentVaultNativeCoin,
+} from '../state/currentVault';
 import { ManageVaultChainCoinsPrompt } from './manage/coin/ManageVaultChainCoinsPrompt';
 import { useCurrentVaultChain } from './useCurrentVaultChain';
 import { VaultAddressLink } from './VaultAddressLink';
 import { VaultChainCoinItem } from './VaultChainCoinItem';
 
 export const VaultChainPage = () => {
+  const [, setAllChainTokens] = usePersistentState<
+    Record<string, storage.Coin[]>
+  >(PersistentStateKey.ChainAllTokens, {});
+  const chain = useCurrentVaultChain();
+  const currentChainCoins = useCurrentVaultChainCoins(chain);
   const invalidateQueries = useInvalidateQueries();
   const { globalCurrency } = useGlobalCurrency();
-  const chain = useCurrentVaultChain();
+  const publicKeyQuery = useVaultPublicKeyQuery(chain);
   const vaultAddressQuery = useVaultAddressQuery(chain);
   const vaultCoinsQuery = useVaultChainCoinsQuery(chain);
   const nativeCoin = useCurrentVaultNativeCoin(chain);
   const copyAddress = useCopyAddress();
   const storageCoinKey = getStorageCoinKey(nativeCoin);
   const invalidateQueryKey = getBalanceQueryKey(storageCoinKey);
+  const walletCore = useAssertWalletCore();
   const { t } = useTranslation();
+  const { mutate: saveCoins } = useSaveCoinsMutation();
 
+  const account = useMemo(
+    () => ({
+      address: nativeCoin.address,
+      chain,
+    }),
+    [nativeCoin.address, chain]
+  );
+
+  const findTokensQuery = useTokensAutoDiscoveryQuery(account);
   const { mutate: refreshBalance, isPending } = useMutation({
     mutationFn: () => {
-      return invalidateQueries(invalidateQueryKey);
+      return invalidateQueries(
+        invalidateQueryKey,
+        getTokensAutoDiscoveryQueryKey(account)
+      );
     },
   });
 
-  const { refetch: retriggerAutoDiscover } = useAutoDiscoverAndSaveTokens({
+  // It's a bad solution, but better than what we had before
+  // TODO: Implement an abstraction auto-discovery mechanism at the root of the app
+  useEffect(() => {
+    if (findTokensQuery.data && publicKeyQuery.data) {
+      saveCoins(
+        findTokensQuery.data.map(coinMeta =>
+          coinToStorageCoin(
+            createCoin({
+              coinMeta,
+              publicKey: publicKeyQuery.data,
+              walletCore,
+            })
+          )
+        )
+      );
+
+      setAllChainTokens(pv => ({
+        ...pv,
+        [chain]: withoutDuplicates(
+          [
+            ...currentChainCoins,
+            ...findTokensQuery.data.map(coinMeta =>
+              coinToStorageCoin(
+                createCoin({
+                  coinMeta,
+                  publicKey: publicKeyQuery.data,
+                  walletCore,
+                })
+              )
+            ),
+          ],
+          (a, b) => a.ticker === b.ticker
+        ),
+      }));
+    }
+  }, [
     chain,
-    coin: storageCoinToCoin(nativeCoin),
-  });
+    currentChainCoins,
+    findTokensQuery.data,
+    publicKeyQuery.data,
+    saveCoins,
+    setAllChainTokens,
+    walletCore,
+  ]);
 
   const hasMultipleCoinsSupport = !isEmpty(
     TokensStore.TokenSelectionAssets.filter(
@@ -85,7 +159,6 @@ export const VaultChainPage = () => {
             <PageHeaderIconButton
               onClick={() => {
                 refreshBalance();
-                retriggerAutoDiscover();
               }}
               icon={isPending ? <Spinner /> : <RefreshIcon />}
             />
@@ -175,11 +248,12 @@ export const VaultChainPage = () => {
             error={() => t('failed_to_load')}
             pending={() => t('loading')}
             success={coins => {
-              const orderedCoins = splitBy(coins, coin =>
-                isNativeCoin(coin) ? 0 : 1
-              )
-                .map(sortCoinsByBalance)
-                .flat();
+              const orderedCoins = withoutDuplicates(
+                splitBy(coins, coin => (isNativeCoin(coin) ? 0 : 1))
+                  .map(sortCoinsByBalance)
+                  .flat(),
+                (one, another) => one.ticker === another.ticker
+              );
 
               return (
                 <>

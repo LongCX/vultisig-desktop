@@ -13,6 +13,8 @@ export enum PersistentStateKey {
   AddressBook = 'addressBook',
   FavouriteTokens = 'favouriteTokens',
   DefaultChains = 'defaultChains',
+  HasAutoDiscoveryBeenDoneForChain = 'HasAutoDiscoveryBeenDoneForChain',
+  ChainAllTokens = 'ChainAllTokens',
 }
 
 const persistentStorage =

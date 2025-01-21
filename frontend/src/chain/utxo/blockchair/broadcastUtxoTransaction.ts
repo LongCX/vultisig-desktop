@@ -1,4 +1,5 @@
 import { extractErrorMsg } from '../../../lib/utils/error/extractErrorMsg';
+import { isInError } from '../../../lib/utils/error/isInError';
 import { UtxoChain } from '../../../model/chain';
 import { getBlockchairBaseUrl } from './getBlockchairBaseUrl';
 
@@ -38,9 +39,12 @@ export const broadcastUtxoTransaction = async ({
     return response.data.transaction_hash;
   }
 
-  throw new Error(
-    `Failed to broadcast transaction: ${
-      'context' in response ? response.context.error : extractErrorMsg(response)
-    }`
-  );
+  const error =
+    'context' in response ? response.context.error : extractErrorMsg(response);
+
+  if (isInError(error, 'txn-mempool-conflict')) {
+    return null;
+  }
+
+  throw new Error(`Failed to broadcast transaction: ${extractErrorMsg(error)}`);
 };
