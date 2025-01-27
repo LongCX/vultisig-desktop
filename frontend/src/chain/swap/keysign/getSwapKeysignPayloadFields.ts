@@ -1,3 +1,4 @@
+import { chainFeeCoin } from '../../../coin/chainFeeCoin';
 import { areEqualCoins } from '../../../coin/Coin';
 import { getCoinKey } from '../../../coin/utils/coin';
 import { getCoinMetaKey } from '../../../coin/utils/coinMeta';
@@ -12,8 +13,8 @@ import { isOneOf } from '../../../lib/utils/array/isOneOf';
 import { shouldBePresent } from '../../../lib/utils/assert/shouldBePresent';
 import { matchRecordUnion } from '../../../lib/utils/matchRecordUnion';
 import { EvmChain } from '../../../model/chain';
-import { getChainFeeCoin } from '../../tx/fee/utils/getChainFeeCoin';
 import { fromChainAmount } from '../../utils/fromChainAmount';
+import { GeneralSwapQuote } from '../general/GeneralSwapQuote';
 import { thorchainSwapQuoteToSwapPayload } from '../native/thor/utils/thorchainSwapQuoteToSwapPayload';
 import { SwapQuote } from '../quote/SwapQuote';
 
@@ -36,7 +37,7 @@ export const getSwapKeysignPayloadFields = ({
   const fromCoinKey = getCoinKey(fromCoin);
 
   return matchRecordUnion(quote, {
-    oneInch: quote => {
+    general: (quote: GeneralSwapQuote): Output => {
       const swapPayload = new OneInchSwapPayload({
         fromCoin,
         toCoin,
@@ -54,15 +55,13 @@ export const getSwapKeysignPayloadFields = ({
         }),
       });
 
-      const result: Output = {
+      return {
         toAddress: quote.tx.to,
         swapPayload: {
           case: 'oneinchSwapPayload',
           value: swapPayload,
         },
       };
-
-      return result;
     },
     native: quote => {
       const { memo, swapChain } = quote;
@@ -90,7 +89,7 @@ export const getSwapKeysignPayloadFields = ({
         return result;
       }
 
-      const nativeFeeCoin = getCoinMetaKey(getChainFeeCoin(swapChain));
+      const nativeFeeCoin = getCoinMetaKey(chainFeeCoin[swapChain]);
 
       const isDeposit = areEqualCoins(fromCoinKey, nativeFeeCoin);
 

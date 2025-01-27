@@ -1,7 +1,7 @@
 import { NativeSwapEnabledChain } from '../../../chain/swap/native/NativeSwapChain';
 import { getNativeSwapDecimals } from '../../../chain/swap/native/utils/getNativeSwapDecimals';
-import { getChainFeeCoin } from '../../../chain/tx/fee/utils/getChainFeeCoin';
 import { getFeeAmount } from '../../../chain/tx/fee/utils/getFeeAmount';
+import { chainFeeCoin } from '../../../coin/chainFeeCoin';
 import { getCoinMetaKey } from '../../../coin/utils/coinMeta';
 import { useTransformQueriesData } from '../../../lib/ui/query/hooks/useTransformQueriesData';
 import { matchRecordUnion } from '../../../lib/utils/matchRecordUnion';
@@ -25,10 +25,10 @@ export const useSwapFeesQuery = () => {
       chainSpecific: chainSpecificQuery,
     },
     ({ swapQuote, chainSpecific }): SwapFees => {
-      const fromFeeCoin = getChainFeeCoin(fromCoinKey.chain);
+      const fromFeeCoin = chainFeeCoin[fromCoinKey.chain];
 
       return matchRecordUnion(swapQuote, {
-        native: ({ fees }): SwapFees => {
+        native: ({ fees }) => {
           const decimals = getNativeSwapDecimals(
             fromCoinKey.chain as NativeSwapEnabledChain
           );
@@ -44,12 +44,12 @@ export const useSwapFeesQuery = () => {
             network: {
               ...getCoinMetaKey(fromFeeCoin),
               amount: feeAmount,
-              decimals: getChainFeeCoin(fromCoinKey.chain).decimals,
+              decimals: fromFeeCoin.decimals,
               chainSpecific,
             },
           };
         },
-        oneInch: ({ tx: { gasPrice, gas } }): SwapFees => {
+        general: ({ tx: { gasPrice, gas } }) => {
           return {
             swap: {
               ...getCoinMetaKey(fromFeeCoin),

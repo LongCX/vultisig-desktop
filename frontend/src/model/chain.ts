@@ -35,6 +35,7 @@ export enum CosmosChain {
   Terra = 'Terra',
   TerraClassic = 'TerraClassic',
   Noble = 'Noble',
+  Akash = 'Akash',
 }
 
 export enum OtherChain {
@@ -59,20 +60,7 @@ export enum TssAction {
   RESHARE = 'RESHARE',
 }
 
-export const chainKinds = [
-  'evm',
-  'utxo',
-  'cosmos',
-  'solana',
-  'polkadot',
-  'ton',
-  'sui',
-  'ripple',
-] as const;
-
-export type ChainKind = (typeof chainKinds)[number];
-
-export const chainKindRecord: Record<Chain, ChainKind> = {
+export const chainKindRecord = {
   [EvmChain.Arbitrum]: 'evm',
   [EvmChain.Avalanche]: 'evm',
   [EvmChain.Base]: 'evm',
@@ -99,16 +87,23 @@ export const chainKindRecord: Record<Chain, ChainKind> = {
   [CosmosChain.Terra]: 'cosmos',
   [CosmosChain.TerraClassic]: 'cosmos',
   [CosmosChain.Noble]: 'cosmos',
+  [CosmosChain.Akash]: 'cosmos',
 
   [OtherChain.Sui]: 'sui',
-
   [OtherChain.Solana]: 'solana',
-
   [OtherChain.Polkadot]: 'polkadot',
-
   [OtherChain.Ton]: 'ton',
-
   [OtherChain.Ripple]: 'ripple',
-};
+} as const;
+
+export type ChainKind = (typeof chainKindRecord)[Chain];
+
+export type DeriveChainKind<T> = T extends Chain
+  ? (typeof chainKindRecord)[T]
+  : never;
+
+export function getChainKind<T extends Chain>(chain: T): DeriveChainKind<T> {
+  return chainKindRecord[chain] as DeriveChainKind<T>;
+}
 
 export const maxSendAmountEnabledChains = Object.values(UtxoChain);
