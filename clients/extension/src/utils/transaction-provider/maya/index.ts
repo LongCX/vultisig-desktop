@@ -8,24 +8,27 @@ import Long from "long";
 import {
   MAYAChainSpecificSchema,
   type MAYAChainSpecific,
-} from "protos/blockchain_specific_pb";
-import { CoinSchema, type Coin } from "protos/coin_pb";
+} from "@core/communication/vultisig/keysign/v1/blockchain_specific_pb";
+import {
+  CoinSchema,
+  type Coin,
+} from "@core/communication/vultisig/keysign/v1/coin_pb";
 import {
   KeysignPayloadSchema,
   type KeysignPayload,
-} from "protos/keysign_message_pb";
+} from "@core/communication/vultisig/keysign/v1/keysign_message_pb";
 
-import { ChainKey } from "utils/constants";
+import { ChainKey } from "../../constants";
 import {
   ITransaction,
   SignatureProps,
   SignedTransaction,
   SpecificThorchain,
   VaultProps,
-} from "utils/interfaces";
-import api from "utils/api";
-import { SignedTransactionResult } from "utils/signed-transaction-result";
-import BaseTransactionProvider from "utils/transaction-provider/base";
+} from "../../interfaces";
+import api from "../../api";
+import { SignedTransactionResult } from "../../signed-transaction-result";
+import BaseTransactionProvider from "../../transaction-provider/base";
 
 import SigningMode = TW.Cosmos.Proto.SigningMode;
 import BroadcastMode = TW.Cosmos.Proto.BroadcastMode;
@@ -35,18 +38,13 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
     chainKey: ChainKey,
     chainRef: { [chainKey: string]: CoinType },
     dataEncoder: (data: Uint8Array) => Promise<string>,
-    walletCore: WalletCore
+    walletCore: WalletCore,
   ) {
     super(chainKey, chainRef, dataEncoder, walletCore);
-
-    this.chainKey = chainKey;
-    this.chainRef = chainRef;
-    this.dataEncoder = dataEncoder;
-    this.walletCore = walletCore;
   }
 
   public getSpecificTransactionInfo = (
-    coin: Coin
+    coin: Coin,
   ): Promise<SpecificThorchain> => {
     return new Promise<SpecificThorchain>((resolve) => {
       api.maya.fetchAccountNumber(coin.address).then((accountData) => {
@@ -67,7 +65,7 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
 
   public getKeysignPayload = (
     transaction: ITransaction.METAMASK,
-    vault: VaultProps
+    vault: VaultProps,
   ): Promise<KeysignPayload> => {
     return new Promise((resolve) => {
       const coin = create(CoinSchema, {
@@ -76,7 +74,7 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
         address: transaction.from,
         decimals: transaction.chain.decimals,
         hexPublicKey: vault.chains.find(
-          (chain) => chain.name === transaction.chain.name
+          (chain) => chain.name === transaction.chain.name,
         )?.derivationKey,
         isNativeToken: true,
         logo: transaction.chain.ticker.toLowerCase(),
@@ -120,12 +118,12 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
       const coinType = this.walletCore.CoinType.thorchain;
       const pubKeyData = Buffer.from(
         this.keysignPayload?.coin?.hexPublicKey ?? "",
-        "hex"
+        "hex",
       );
       const fromAddr = this.walletCore.AnyAddress.createBech32(
         this.keysignPayload?.coin?.address ?? "",
         this.walletCore.CoinType.thorchain,
-        "maya"
+        "maya",
       );
 
       if (mayaSpecific.isDeposit) {
@@ -157,7 +155,7 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
         const toAddress = this.walletCore.AnyAddress.createBech32(
           this.keysignPayload?.toAddress ?? "",
           coinType,
-          "maya"
+          "maya",
         );
         if (!toAddress) {
           throw new Error("invalid to address");
@@ -203,7 +201,7 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
     return new Promise((resolve, reject) => {
       if (inputData && vault) {
         const pubkeyMaya = vault.chains.find(
-          (chain) => chain.name === ChainKey.MAYACHAIN
+          (chain) => chain.name === ChainKey.MAYACHAIN,
         )?.derivationKey;
 
         if (pubkeyMaya) {
@@ -221,10 +219,10 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
               coinType,
               inputData,
               allSignatures,
-              publicKeys
+              publicKeys,
             );
           const output = TW.Cosmos.Proto.SigningOutput.decode(
-            compileWithSignatures
+            compileWithSignatures,
           );
           const serializedData = output.serialized;
           const parsedData = JSON.parse(serializedData);
@@ -234,7 +232,7 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
           const result = new SignedTransactionResult(
             serializedData,
             hash,
-            undefined
+            undefined,
           );
 
           resolve({ txHash: result.transactionHash, raw: serializedData });
@@ -251,10 +249,10 @@ export default class MayaTransactionProvider extends BaseTransactionProvider {
     const rData = this.walletCore.HexCoding.decode(signature.R);
     const sData = this.walletCore.HexCoding.decode(signature.S);
     const recoveryIDdata = this.walletCore.HexCoding.decode(
-      signature.RecoveryID
+      signature.RecoveryID,
     );
     const combinedData = new Uint8Array(
-      rData.length + sData.length + recoveryIDdata.length
+      rData.length + sData.length + recoveryIDdata.length,
     );
     combinedData.set(rData);
     combinedData.set(sData, rData.length);

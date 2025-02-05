@@ -1,8 +1,8 @@
 import axios from "axios";
 import { TransactionResponse } from "ethers";
 
-import { toCamelCase, toSnakeCase } from "utils/functions";
-import { ChainKey, Currency } from "utils/constants";
+import { toCamelCase, toSnakeCase } from "./functions";
+import { ChainKey, Currency } from "./constants";
 import {
   CosmosAccountData,
   CosmosAccountDataResponse,
@@ -10,7 +10,7 @@ import {
   MayaAccountDataResponse,
   SignatureProps,
   ThorchainAccountDataResponse,
-} from "utils/interfaces";
+} from "./interfaces";
 import { ThornodeTxResponse, ThornodeTxResponseSuccess, ThornodeNetworkResponse } from '../types/thorchain';
 
 namespace CryptoCurrency {
@@ -71,14 +71,6 @@ api.interceptors.response.use((response) => {
 });
 
 export default {
-  checkVaultExist: (ecdsa: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      api
-        .get(`${apiRef.vultisig.api}vault/exist/${ecdsa}`)
-        .then(() => resolve(true))
-        .catch(() => resolve(false));
-    });
-  },
   cryptoCurrency: (cmcId: number, currency: Currency): Promise<number> => {
     return new Promise((resolve) => {
       api
