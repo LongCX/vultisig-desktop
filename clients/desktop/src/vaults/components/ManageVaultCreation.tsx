@@ -1,19 +1,19 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../lib/ui/buttons/Button';
-import { PlusIcon } from '../../lib/ui/icons/PlusIcon';
-import { HStack, VStack } from '../../lib/ui/layout/Stack';
-import { useAppNavigate } from '../../navigation/hooks/useAppNavigate';
+import { Button } from '../../lib/ui/buttons/Button'
+import { PlusIcon } from '../../lib/ui/icons/PlusIcon'
+import { HStack, VStack } from '../../lib/ui/layout/Stack'
+import { useAppNavigate } from '../../navigation/hooks/useAppNavigate'
 
 export const ManageVaultCreation = () => {
-  const navigate = useAppNavigate();
-  const { t } = useTranslation();
+  const navigate = useAppNavigate()
+  const { t } = useTranslation()
 
   return (
     <VStack gap={20}>
       <Button
         onClick={() => {
-          navigate('setupVault', { params: {} });
+          navigate('newVault')
         }}
         kind="primary"
       >
@@ -21,14 +21,6 @@ export const ManageVaultCreation = () => {
           <PlusIcon /> {t('add_new_vault')}
         </HStack>
       </Button>
-      <Button
-        onClick={() => {
-          navigate('importVault');
-        }}
-        kind="outlined"
-      >
-        {t('import_existing_vault')}
-      </Button>
     </VStack>
-  );
-};
+  )
+}

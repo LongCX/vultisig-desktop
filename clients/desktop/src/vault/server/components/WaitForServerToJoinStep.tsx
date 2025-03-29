@@ -1,43 +1,29 @@
-import { isEmpty } from '@lib/utils/array/isEmpty';
-import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg';
-import { recordFromKeys } from '@lib/utils/record/recordFromKeys';
-import { useEffect } from 'react';
+import { OnBackProp, OnFinishProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 
-import { OnBackProp, OnForwardProp, TitleProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState';
-import { usePeerOptionsQuery } from '../../keygen/shared/peerDiscovery/queries/usePeerOptionsQuery';
-import { usePeersSelectionRecord } from '../../keysign/shared/state/selectedPeers';
-import { WaitForServerStates } from './WaitForServerStates';
+import { usePeerOptionsQuery } from '../../keygen/shared/peerDiscovery/queries/usePeerOptionsQuery'
+import { WaitForServerStates } from './WaitForServerStates'
 
 export const WaitForServerToJoinStep: React.FC<
-  OnForwardProp & Partial<OnBackProp> & TitleProp
-> = ({ onForward, title }) => {
-  const peerOptionsQuery = usePeerOptionsQuery();
-  const [, setRecord] = usePeersSelectionRecord();
-  const { data } = peerOptionsQuery;
-
-  useEffect(() => {
-    if (data && !isEmpty(data)) {
-      setRecord(recordFromKeys(data, () => true));
-    }
-  }, [data, setRecord]);
+  OnFinishProp<string[]> & Partial<OnBackProp>
+> = ({ onFinish }) => {
+  const peersQuery = usePeerOptionsQuery()
 
   return (
     <>
       <MatchQuery
-        value={peerOptionsQuery}
+        value={peersQuery}
         pending={() => <WaitForServerStates state="pending" />}
-        success={() => (
-          <WaitForServerStates state="success" onForward={onForward} />
-        )}
-        error={error => (
-          <FullPageFlowErrorState
-            message={extractErrorMsg(error)}
-            title={title}
+        success={data => (
+          <WaitForServerStates
+            state="success"
+            onAnimationEnd={() => {
+              onFinish(data)
+            }}
           />
         )}
+        error={() => <WaitForServerStates state="error" />}
       />
     </>
-  );
-};
+  )
+}

@@ -29,16 +29,20 @@ type Store struct {
 
 // NewStore creates a new store
 func NewStore() (*Store, error) {
-	// Get the current running folder
-	exePath, err := os.Executable()
-	if err != nil {
-		return nil, fmt.Errorf("fail to get current directory, err: %w", err)
+	dbPath := os.Getenv(`VULTISIG_DB_PATH`)
+	if dbPath == "" {
+		// Get the current running folder
+		exePath, err := os.Executable()
+		if err != nil {
+			return nil, fmt.Errorf("fail to get current directory, err: %w", err)
+		}
+		dbPath = exePath
 	}
-	exeDir := filepath.Dir(exePath)
+	exeDir := filepath.Dir(dbPath)
 	// Construct the full path to the database file
 	dbFilePath := filepath.Join(exeDir, DbFileName)
 
-	db, err := sql.Open("sqlite3", dbFilePath)
+	db, err := sql.Open("sqlite3", dbFilePath+"?_journal_mode=WAL")
 	if err != nil {
 		return nil, fmt.Errorf("fail to open sqlite db, err: %w", err)
 	}
@@ -56,7 +60,9 @@ func NewStore() (*Store, error) {
 
 // Migrate migrates the db
 func (s *Store) Migrate() error {
-	driver, err := sqlite3.WithInstance(s.db, &sqlite3.Config{})
+	driver, err := sqlite3.WithInstance(s.db, &sqlite3.Config{
+		NoTxWrap: true,
+	})
 	if err != nil {
 		return fmt.Errorf("could not create sqlite driver, err: %w", err)
 	}
@@ -74,7 +80,6 @@ func (s *Store) Migrate() error {
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("could not apply migrations, err: %w", err)
 	}
-
 	return nil
 }
 
@@ -91,8 +96,8 @@ func (s *Store) SaveVault(vault *Vault) error {
 
 	query := `INSERT OR REPLACE INTO vaults (
 		name, public_key_ecdsa, public_key_eddsa, created_at, hex_chain_code,
-		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id, lib_type
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err = s.db.Exec(query,
 		vault.Name,
@@ -106,6 +111,7 @@ func (s *Store) SaveVault(vault *Vault) error {
 		vault.Order,
 		vault.IsBackedUp,
 		vault.FolderID,
+		vault.LibType,
 	)
 	if err != nil {
 		return fmt.Errorf("could not upsert vault, err: %w", err)
@@ -164,7 +170,7 @@ func (s *Store) UpdateVaultIsBackedUp(publicKeyECDSA string, isBackedUp bool) er
 // GetVault gets a vault
 func (s *Store) GetVault(publicKeyEcdsa string) (*Vault, error) {
 	query := `SELECT name, public_key_ecdsa, public_key_eddsa, created_at, hex_chain_code,
-		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id
+		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id, lib_type
 		FROM vaults WHERE public_key_ecdsa = ?`
 	row := s.db.QueryRow(query, publicKeyEcdsa)
 	var signers string
@@ -181,6 +187,7 @@ func (s *Store) GetVault(publicKeyEcdsa string) (*Vault, error) {
 		&vault.Order,
 		&vault.IsBackedUp,
 		&folderID,
+		&vault.LibType,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -217,8 +224,15 @@ func (s *Store) closeRows(rows *sql.Rows) {
 }
 
 func (s *Store) saveKeyshare(vaultPublicKeyECDSA string, keyShare KeyShare) error {
+	// delete existing keyshare first
+	deleteQuery := `DELETE FROM keyshares WHERE public_key_ecdsa = ? AND public_key = ?`
+	_, err := s.db.Exec(deleteQuery, vaultPublicKeyECDSA, keyShare.PublicKey)
+	if err != nil {
+		return fmt.Errorf("could not delete keyshare, err: %w", err)
+	}
+	// insert new keyshare
 	query := `INSERT OR REPLACE INTO keyshares (public_key_ecdsa, public_key, keyshare) VALUES (?, ?, ?)`
-	_, err := s.db.Exec(query, vaultPublicKeyECDSA, keyShare.PublicKey, keyShare.KeyShare)
+	_, err = s.db.Exec(query, vaultPublicKeyECDSA, keyShare.PublicKey, keyShare.KeyShare)
 	if err != nil {
 		return fmt.Errorf("could not upsert keyshare, err: %w", err)
 	}
@@ -246,7 +260,7 @@ func (s *Store) getKeyShares(vaultPublicKeyECDSA string) ([]KeyShare, error) {
 // GetVaults gets all vaults
 func (s *Store) GetVaults() ([]*Vault, error) {
 	query := `SELECT name, public_key_ecdsa, public_key_eddsa, created_at, hex_chain_code,
-		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id FROM vaults`
+		local_party_id, signers, reshare_prefix, "order", is_backedup, folder_id, lib_type FROM vaults`
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("could not query vaults, err: %w", err)
@@ -269,6 +283,7 @@ func (s *Store) GetVaults() ([]*Vault, error) {
 			&vault.Order,
 			&vault.IsBackedUp,
 			&folderID,
+			&vault.LibType,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("could not scan vault, err: %w", err)

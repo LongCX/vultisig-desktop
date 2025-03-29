@@ -1,27 +1,27 @@
-import { css } from 'styled-components';
+import { css } from 'styled-components'
 
-import { text } from '../text';
-import { getColor } from '../theme/getters';
-import { borderRadius } from './borderRadius';
-import { horizontalPadding } from './horizontalPadding';
-import { toSizeUnit } from './toSizeUnit';
+import { text } from '../text'
+import { getColor } from '../theme/getters'
+import { borderRadius } from './borderRadius'
+import { horizontalPadding } from './horizontalPadding'
+import { toSizeUnit } from './toSizeUnit'
 
-export const textInputHorizontalPadding = 12;
-export const textInputHeight = 56;
-export const textInputBorderRadius = borderRadius.s;
+export const textInputHorizontalPadding = 12
+export const textInputHeight = 56
+export const textInputBorderRadius = borderRadius.s
 
 export const textInputFrame = css`
   height: ${toSizeUnit(textInputHeight)};
   width: 100%;
   ${horizontalPadding(textInputHorizontalPadding)};
   ${textInputBorderRadius};
-`;
+`
 
 export const textInputBackground = css`
   background: ${getColor('foreground')};
-`;
+`
 
-export const interactiveTextInput = css`
+const interactiveTextInput = css`
   outline: 1px solid transparent;
   border: 1px solid transparent;
 
@@ -33,14 +33,14 @@ export const interactiveTextInput = css`
   &:active {
     border-color: ${getColor('foregroundSuper')};
   }
-`;
+`
 
 export const textInput = css`
   ${textInputFrame};
   font-size: 14px;
   font-weight: 700;
 
-  background: ${getColor('foreground')};
+  ${textInputBackground};
   color: ${getColor('contrast')};
 
   &::placeholder {
@@ -52,4 +52,4 @@ export const textInput = css`
   }
 
   ${interactiveTextInput};
-`;
+`

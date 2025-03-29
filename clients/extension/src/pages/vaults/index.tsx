@@ -1,85 +1,78 @@
-import { StrictMode, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Button, Checkbox, Form } from "antd";
-import ReactDOM from "react-dom/client";
+import '@clients/extension/src/styles/index.scss'
+import '@clients/extension/src/pages/vaults/index.scss'
 
+import ConfigProvider from '@clients/extension/src/components/config-provider'
+import VultiError from '@clients/extension/src/components/vulti-error'
+import VultiLoading from '@clients/extension/src/components/vulti-loading'
+import { Vultisig } from '@clients/extension/src/icons'
+import { VaultProps } from '@clients/extension/src/utils/interfaces'
 import {
-  getStoredLanguage,
   getStoredVaults,
   setStoredVaults,
-} from "../../utils/storage";
-import { VaultProps } from "../../utils/interfaces";
-import i18n from "../../i18n/config";
-import messageKeys from "../../utils/message-keys";
+} from '@clients/extension/src/utils/storage'
+import { Button, Checkbox, Form } from 'antd'
+import { StrictMode, useEffect, useState } from 'react'
+import ReactDOM from 'react-dom/client'
+import { useTranslation } from 'react-i18next'
 
-import { Vultisig } from "../../icons";
-import ConfigProvider from "../../components/config-provider";
-import VultiLoading from "../../components/vulti-loading";
-import VultiError from "../../components/vulti-error";
-
-import "../../styles/index.scss";
-import "../../pages/vaults/index.scss";
+import { ExtensionProviders } from '../../state/ExtensionProviders'
 
 interface FormProps {
-  uids: string[];
+  uids: string[]
 }
 
 interface InitialState {
-  errorDescription?: string;
-  errorTitle?: string;
-  hasError?: boolean;
-  vaults: VaultProps[];
+  errorDescription?: string
+  errorTitle?: string
+  hasError?: boolean
+  vaults: VaultProps[]
 }
 
 const Component = () => {
-  const { t } = useTranslation();
-  const initialState: InitialState = { vaults: [] };
-  const [state, setState] = useState(initialState);
-  const { errorDescription, errorTitle, hasError, vaults } = state;
-  const [form] = Form.useForm();
+  const { t } = useTranslation()
+  const initialState: InitialState = { vaults: [] }
+  const [state, setState] = useState(initialState)
+  const { errorDescription, errorTitle, hasError, vaults } = state
+  const [form] = Form.useForm()
 
   const handleClose = () => {
-    window.close();
-  };
+    window.close()
+  }
 
   const handleSubmit = () => {
     form
       .validateFields()
       .then(({ uids }: FormProps) => {
-        getStoredVaults().then((vaults) => {
+        getStoredVaults().then(vaults => {
           setStoredVaults(
-            vaults.map((vault) => ({
+            vaults.map(vault => ({
               ...vault,
               selected: uids.indexOf(vault.uid) >= 0,
-            })),
+            }))
           ).then(() => {
-            handleClose();
-          });
-        });
+            handleClose()
+          })
+        })
       })
-      .catch(() => {});
-  };
+      .catch(() => {})
+  }
 
   const componentDidMount = (): void => {
-    getStoredLanguage().then((language) => {
-      i18n.changeLanguage(language);
-
-      getStoredVaults().then((vaults) => {
-        if (vaults.length) {
-          setState((prevState) => ({ ...prevState, vaults, hasError: false }));
-        } else {
-          setState((prevState) => ({
-            ...prevState,
-            errorDescription: t(messageKeys.GET_VAULT_FAILED_DESCRIPTION),
-            errorTitle: t(messageKeys.GET_VAULT_FAILED),
-            hasError: true,
-          }));
-        }
-      });
-    });
-  };
-
-  useEffect(componentDidMount, []);
+    getStoredVaults().then(vaults => {
+      if (vaults.length) {
+        setState(prevState => ({ ...prevState, vaults, hasError: false }))
+      } else {
+        setState(prevState => ({
+          ...prevState,
+          errorDescription: t('get_vault_failed_description'),
+          errorTitle: t('get_vault_failed'),
+          hasError: true,
+        }))
+      }
+    })
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(componentDidMount, [])
 
   return (
     <ConfigProvider>
@@ -87,24 +80,20 @@ const Component = () => {
         {hasError ? (
           <VultiError
             onClose={handleClose}
-            description={errorDescription ?? ""}
-            title={errorTitle ?? ""}
+            description={errorDescription ?? ''}
+            title={errorTitle ?? ''}
           />
         ) : vaults.length ? (
           <>
             <div className="header">
               <Vultisig className="logo" />
-              <span className="title">
-                {t(messageKeys.CONNECT_WITH_VULTISIG)}
-              </span>
+              <span className="title">{t('connect_with_vultisig')}</span>
             </div>
             <div className="content">
               <Form form={form} onFinish={handleSubmit}>
                 <Form.Item<FormProps>
                   name="uids"
-                  rules={[
-                    { required: true, message: t(messageKeys.SELECT_A_VAULT) },
-                  ]}
+                  rules={[{ required: true, message: t('select_vault') }]}
                 >
                   <Checkbox.Group>
                     {vaults.map(({ name, uid }) => (
@@ -119,10 +108,10 @@ const Component = () => {
             </div>
             <div className="footer">
               <Button onClick={handleClose} shape="round" block>
-                {t(messageKeys.CANCEL)}
+                {t('cancel')}
               </Button>
               <Button onClick={handleSubmit} type="primary" shape="round" block>
-                {t(messageKeys.CONNECT)}
+                {t('connect')}
               </Button>
             </div>
           </>
@@ -131,11 +120,13 @@ const Component = () => {
         )}
       </div>
     </ConfigProvider>
-  );
-};
+  )
+}
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Component />
-  </StrictMode>,
-);
+    <ExtensionProviders>
+      <Component />
+    </ExtensionProviders>
+  </StrictMode>
+)

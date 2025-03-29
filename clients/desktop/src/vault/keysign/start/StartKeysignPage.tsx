@@ -1,72 +1,75 @@
-import { Match } from '../../../lib/ui/base/Match';
-import { useStepNavigation } from '../../../lib/ui/hooks/useStepNavigation';
-import { useAppPathState } from '../../../navigation/hooks/useAppPathState';
-import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack';
-import { JoinKeygenSessionStep } from '../../keygen/shared/JoinKeygenSessionStep';
-import { KeygenStartSessionStep } from '../../keygen/shared/KeygenStartSessionStep';
-import { MediatorManager } from '../../keygen/shared/peerDiscovery/MediatorManager';
-import { GeneratedServiceNameProvider } from '../../keygen/shared/state/currentServiceName';
-import { GeneratedSessionIdProvider } from '../../keygen/shared/state/currentSessionId';
-import { CurrentLocalPartyIdProvider } from '../../keygen/state/currentLocalPartyId';
-import { CurrentServerTypeProvider } from '../../keygen/state/currentServerType';
-import { GeneratedHexEncryptionKeyProvider } from '../../setup/state/currentHexEncryptionKey';
-import { ServerUrlDerivedFromServerTypeProvider } from '../../setup/state/serverUrlDerivedFromServerType';
-import { useCurrentVault } from '../../state/currentVault';
-import { KeysignSigningStep } from '../shared/KeysignSigningStep';
-import { KeysignMessagePayloadProvider } from '../shared/state/keysignMessagePayload';
-import { PeersSelectionRecordProvider } from '../shared/state/selectedPeers';
-import { KeysignPeerDiscoveryStep } from './peerDiscovery/KeysignPeerDiscoveryStep/KeysignPeerDiscoveryStep';
+import { Match } from '../../../lib/ui/base/Match'
+import { useStepNavigation } from '../../../lib/ui/hooks/useStepNavigation'
+import { MpcLocalPartyIdProvider } from '../../../mpc/localPartyId/state/mpcLocalPartyId'
+import { MpcPeersSelectionProvider } from '../../../mpc/peers/state/mpcSelectedPeers'
+import { MpcMediatorManager } from '../../../mpc/serverType/MpcMediatorManager'
+import { MpcServerTypeProvider } from '../../../mpc/serverType/state/mpcServerType'
+import { GeneratedMpcSessionIdProvider } from '../../../mpc/session/state/mpcSession'
+import { IsInitiatingDeviceProvider } from '../../../mpc/state/isInitiatingDevice'
+import { useAppPathState } from '../../../navigation/hooks/useAppPathState'
+import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack'
+import { JoinKeygenSessionStep } from '../../keygen/shared/JoinKeygenSessionStep'
+import { KeygenStartSessionStep } from '../../keygen/shared/KeygenStartSessionStep'
+import { GeneratedServiceNameProvider } from '../../keygen/shared/state/currentServiceName'
+import { GeneratedHexEncryptionKeyProvider } from '../../setup/state/currentHexEncryptionKey'
+import { ServerUrlDerivedFromServerTypeProvider } from '../../setup/state/serverUrlDerivedFromServerType'
+import { useCurrentVault } from '../../state/currentVault'
+import { KeysignSigningStep } from '../shared/KeysignSigningStep'
+import { KeysignMessagePayloadProvider } from '../shared/state/keysignMessagePayload'
+import { KeysignPeerDiscoveryStep } from './peerDiscovery/KeysignPeerDiscoveryStep'
 
-const keysignSteps = ['joinSession', 'peers', 'session', 'sign'] as const;
+const keysignSteps = ['joinSession', 'peers', 'session', 'sign'] as const
 
 export const StartKeysignPage = () => {
-  const { keysignPayload } = useAppPathState<'keysign'>();
+  const { keysignPayload } = useAppPathState<'keysign'>()
 
-  const { local_party_id } = useCurrentVault();
+  const { local_party_id } = useCurrentVault()
 
   const { step, setStep, toPreviousStep, toNextStep } = useStepNavigation({
     steps: keysignSteps,
     onExit: useNavigateBack(),
-  });
+  })
 
   return (
-    <KeysignMessagePayloadProvider value={keysignPayload}>
-      <CurrentLocalPartyIdProvider value={local_party_id}>
-        <GeneratedServiceNameProvider>
-          <PeersSelectionRecordProvider initialValue={{}}>
-            <GeneratedSessionIdProvider>
-              <GeneratedHexEncryptionKeyProvider>
-                <CurrentServerTypeProvider initialValue="relay">
-                  <ServerUrlDerivedFromServerTypeProvider>
-                    <MediatorManager />
-                    <Match
-                      value={step}
-                      joinSession={() => (
-                        <JoinKeygenSessionStep onForward={toNextStep} />
-                      )}
-                      peers={() => (
-                        <KeysignPeerDiscoveryStep onForward={toNextStep} />
-                      )}
-                      session={() => (
-                        <KeygenStartSessionStep
-                          onForward={toNextStep}
-                          onBack={toPreviousStep}
-                        />
-                      )}
-                      sign={() => (
-                        <KeysignSigningStep
-                          payload={keysignPayload}
-                          onBack={() => setStep('peers')}
-                        />
-                      )}
-                    />
-                  </ServerUrlDerivedFromServerTypeProvider>
-                </CurrentServerTypeProvider>
-              </GeneratedHexEncryptionKeyProvider>
-            </GeneratedSessionIdProvider>
-          </PeersSelectionRecordProvider>
-        </GeneratedServiceNameProvider>
-      </CurrentLocalPartyIdProvider>
-    </KeysignMessagePayloadProvider>
-  );
-};
+    <IsInitiatingDeviceProvider value={true}>
+      <KeysignMessagePayloadProvider value={keysignPayload}>
+        <MpcLocalPartyIdProvider value={local_party_id}>
+          <GeneratedServiceNameProvider>
+            <MpcPeersSelectionProvider>
+              <GeneratedMpcSessionIdProvider>
+                <GeneratedHexEncryptionKeyProvider>
+                  <MpcServerTypeProvider initialValue="relay">
+                    <ServerUrlDerivedFromServerTypeProvider>
+                      <MpcMediatorManager />
+                      <Match
+                        value={step}
+                        joinSession={() => (
+                          <JoinKeygenSessionStep onForward={toNextStep} />
+                        )}
+                        peers={() => (
+                          <KeysignPeerDiscoveryStep onForward={toNextStep} />
+                        )}
+                        session={() => (
+                          <KeygenStartSessionStep
+                            onForward={toNextStep}
+                            onBack={toPreviousStep}
+                          />
+                        )}
+                        sign={() => (
+                          <KeysignSigningStep
+                            payload={keysignPayload}
+                            onBack={() => setStep('peers')}
+                          />
+                        )}
+                      />
+                    </ServerUrlDerivedFromServerTypeProvider>
+                  </MpcServerTypeProvider>
+                </GeneratedHexEncryptionKeyProvider>
+              </GeneratedMpcSessionIdProvider>
+            </MpcPeersSelectionProvider>
+          </GeneratedServiceNameProvider>
+        </MpcLocalPartyIdProvider>
+      </KeysignMessagePayloadProvider>
+    </IsInitiatingDeviceProvider>
+  )
+}

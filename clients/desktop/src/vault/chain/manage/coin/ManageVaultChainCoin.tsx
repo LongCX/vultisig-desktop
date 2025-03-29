@@ -1,19 +1,20 @@
-import { ChainEntityIcon } from '../../../../chain/ui/ChainEntityIcon';
-import { getCoinMetaIconSrc } from '../../../../coin/utils/coinMeta';
-import { ValueProp } from '../../../../lib/ui/props';
-import { CoinMeta } from '../../../../model/coin-meta';
-import { ManageVaultCoin } from '../ManageVaultCoin';
+import { Coin } from '@core/chain/coin/Coin'
+import { ValueProp } from '@lib/ui/props'
 
-export const ManageVaultChainCoin = ({ value }: ValueProp<CoinMeta>) => {
+import { ChainEntityIcon } from '../../../../chain/ui/ChainEntityIcon'
+import { getCoinLogoSrc } from '../../../../coin/logo/getCoinLogoSrc'
+import { ManageVaultCoin } from '../ManageVaultCoin'
+
+export const ManageVaultChainCoin = ({ value }: ValueProp<Coin>) => {
   return (
     <ManageVaultCoin
       value={value}
       icon={
         <ChainEntityIcon
-          value={getCoinMetaIconSrc(value)}
+          value={getCoinLogoSrc(value.logo)}
           style={{ fontSize: 32 }}
         />
       }
     />
-  );
-};
+  )
+}

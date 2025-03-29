@@ -1,38 +1,36 @@
-import { ChangeEvent, ComponentProps, forwardRef, Ref } from 'react';
-import styled, { css } from 'styled-components';
+import { LabelProp, UiProps } from '@lib/ui/props'
+import { ChangeEvent, ComponentProps } from 'react'
+import styled, { css } from 'styled-components'
 
-import { textInput } from '../css/textInput';
-import { VStack } from '../layout/Stack';
-import { Spinner } from '../loaders/Spinner';
-import { LabelProp, UiProps } from '../props';
-import { getColor } from '../theme/getters';
-import { InputContainer } from './InputContainer';
-import { InputLabel } from './InputLabel';
+import { textInput } from '../css/textInput'
+import { VStack } from '../layout/Stack'
+import { Spinner } from '../loaders/Spinner'
+import { getColor } from '../theme/getters'
+import { InputContainer } from './InputContainer'
+import { InputLabel } from './InputLabel'
 
-export type SharedTextInputProps = Partial<LabelProp> &
+type SharedTextInputProps = Partial<LabelProp> &
   ComponentProps<typeof TextInputContainer> & {
-    onValueChange?: (value: string) => void;
-    isLoading?: boolean;
-    validationState?: 'valid' | 'invalid';
-  };
+    onValueChange?: (value: string) => void
+    isLoading?: boolean
+    validation?: 'valid' | 'invalid'
+  }
 
 export interface TextInputProps
   extends ComponentProps<typeof TextInputContainer>,
     SharedTextInputProps {
-  inputOverlay?: React.ReactNode;
+  inputOverlay?: React.ReactNode
 }
 
-export const TextInput = forwardRef(function TextInputInner(
-  {
-    onValueChange,
-    inputOverlay,
-    isLoading,
-    className,
-    label,
-    ...props
-  }: TextInputProps,
-  ref: Ref<HTMLInputElement> | null
-) {
+export const TextInput = ({
+  onValueChange,
+  inputOverlay,
+  isLoading,
+  className,
+  label,
+  ref,
+  ...props
+}: TextInputProps) => {
   return (
     <InputContainer>
       {label && <InputLabel>{label}</InputLabel>}
@@ -45,16 +43,16 @@ export const TextInput = forwardRef(function TextInputInner(
             className={className}
             ref={ref}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              props.onChange?.(event);
-              onValueChange?.(event.currentTarget.value);
+              props.onChange?.(event)
+              onValueChange?.(event.currentTarget.value)
             }}
           />
         )}
         {inputOverlay}
       </InputWr>
     </InputContainer>
-  );
-});
+  )
+}
 
 const InputWr = styled.div`
   width: 100%;
@@ -62,15 +60,15 @@ const InputWr = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-`;
+`
 
-export const TextInputContainer = styled.input<{
-  validationState?: 'valid' | 'invalid';
+const TextInputContainer = styled.input<{
+  validation?: 'valid' | 'invalid'
 }>`
   ${textInput};
 
-  ${({ validationState }) =>
-    validationState === 'valid'
+  ${({ validation }) =>
+    validation === 'valid'
       ? css`
           border-color: ${getColor('primary')};
 
@@ -79,7 +77,7 @@ export const TextInputContainer = styled.input<{
             border-color: ${getColor('primary')};
           }
         `
-      : validationState === 'invalid' &&
+      : validation === 'invalid' &&
         css`
           border-color: ${getColor('danger')};
 
@@ -88,12 +86,12 @@ export const TextInputContainer = styled.input<{
             border-color: ${getColor('danger')};
           }
         `}
-`;
+`
 
-export const TextInputLoader = (props: UiProps) => (
+const TextInputLoader = (props: UiProps) => (
   <TextInputContainer as="div" {...props}>
     <VStack fullHeight justifyContent="center">
       <Spinner />
     </VStack>
   </TextInputContainer>
-);
+)

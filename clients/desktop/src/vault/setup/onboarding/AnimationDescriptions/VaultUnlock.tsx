@@ -1,22 +1,22 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { AnimatedVisibility } from '../../../../lib/ui/layout/AnimatedVisibility';
-import { GradientText, Text } from '../../../../lib/ui/text';
-import { TextWrapper } from './AnimationDescriptions.styled';
+import { AnimatedVisibility } from '../../../../lib/ui/layout/AnimatedVisibility'
+import { GradientText, Text } from '../../../../lib/ui/text'
+import { TextWrapper } from './AnimationDescriptions.styled'
 
 export const VaultUnlock = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <AnimatedVisibility>
       <TextWrapper>
-        <Text as="span" size={48}>
+        <Text as="span" size={42}>
           {t('theseSharesCollaborate')}{' '}
         </Text>
-        <GradientText as="span" size={48}>
+        <GradientText as="span" size={42}>
           {t('unlockYourVault')}
         </GradientText>
       </TextWrapper>
     </AnimatedVisibility>
-  );
-};
+  )
+}

@@ -1,25 +1,51 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../../lib/ui/buttons/Button';
-import { useBoolean } from '../../../../lib/ui/hooks/useBoolean';
-import { Checkbox } from '../../../../lib/ui/inputs/checkbox/Checkbox';
-import { AnimatedVisibility } from '../../../../lib/ui/layout/AnimatedVisibility';
-import { HStack, VStack } from '../../../../lib/ui/layout/Stack';
-import { Text } from '../../../../lib/ui/text';
-import { useHasFinishedOnboarding } from '../../../../onboarding/hooks/useHasFinishedOnboarding';
-import { SUMMARY_ITEMS } from './constants';
+import { Button } from '../../../../lib/ui/buttons/Button'
+import { useBoolean } from '../../../../lib/ui/hooks/useBoolean'
+import { ArrowSplitIcon } from '../../../../lib/ui/icons/ArrowSplitIcon'
+import { CloudStackIcon } from '../../../../lib/ui/icons/CloudStackIcon'
+import { CloudWithToolkeyIcon } from '../../../../lib/ui/icons/CloudWithToolkeyIcon'
+import { TriangleExclamationIcon } from '../../../../lib/ui/icons/TriangleExclamationIcon'
+import { AnimatedVisibility } from '../../../../lib/ui/layout/AnimatedVisibility'
+import { HStack, VStack } from '../../../../lib/ui/layout/Stack'
+import { Text } from '../../../../lib/ui/text'
+import { useHasFinishedOnboarding } from '../../../../onboarding/hooks/useHasFinishedOnboarding'
 import {
   ContentWrapper,
   IconWrapper,
   PillWrapper,
+  StyledCheckbox,
   SummaryListItem,
   Wrapper,
-} from './OnboardingSummary.styles';
+} from './OnboardingSummary.styles'
 
 export const OnboardingSummary = () => {
-  const { t } = useTranslation();
-  const [, setHasFinishedOnboarding] = useHasFinishedOnboarding();
-  const [isChecked, { toggle }] = useBoolean(false);
+  const { t } = useTranslation()
+  const [, setHasFinishedOnboarding] = useHasFinishedOnboarding()
+  const [isChecked, { toggle }] = useBoolean(false)
+
+  const items = [
+    {
+      title: t('fastVaultSetup.summary.summaryItemOneTitle'),
+      icon: <CloudWithToolkeyIcon />,
+    },
+    {
+      title: t('fastVaultSetup.summary.summaryItemTwoTitle'),
+      icon: <ArrowSplitIcon />,
+    },
+    {
+      title: t('fastVaultSetup.summary.summaryItemThreeTitle'),
+      icon: <CloudStackIcon />,
+    },
+    {
+      title: t('fastVaultSetup.summary.summaryItemFourTitle'),
+      icon: (
+        <div style={{ fontSize: 24 }}>
+          <TriangleExclamationIcon />
+        </div>
+      ),
+    },
+  ]
 
   return (
     <AnimatedVisibility
@@ -38,27 +64,31 @@ export const OnboardingSummary = () => {
         <ContentWrapper>
           <Text variant="h1Regular">{t('fastVaultSetup.summary.title')}</Text>
           <VStack gap={24}>
-            {SUMMARY_ITEMS.map(({ title, icon: Icon }) => (
+            {items.map(({ title, icon }) => (
               <SummaryListItem alignItems="center" key={title}>
-                <IconWrapper>
-                  <Icon />
-                </IconWrapper>
+                <IconWrapper>{icon}</IconWrapper>
                 <Text color="contrast" weight={500} size={13}>
-                  {t(`fastVaultSetup.summary.${title}`)}
+                  {title}
                 </Text>
               </SummaryListItem>
             ))}
           </VStack>
         </ContentWrapper>
         <VStack gap={16}>
-          <HStack alignItems="center" gap={8}>
-            <Checkbox value={isChecked} onChange={toggle} />
+          <HStack
+            role="button"
+            tabIndex={0}
+            onClick={toggle}
+            alignItems="center"
+            gap={8}
+          >
+            <StyledCheckbox value={isChecked} onChange={() => {}} />
             <Text color="contrast" weight={500} size={14}>
               {t('fastVaultSetup.summary.agreementText')}
             </Text>
           </HStack>
           <Button
-            disabled={!isChecked}
+            isDisabled={!isChecked}
             onClick={() => setHasFinishedOnboarding(true)}
           >
             {t('fastVaultSetup.summary.ctaText')}
@@ -66,5 +96,5 @@ export const OnboardingSummary = () => {
         </VStack>
       </Wrapper>
     </AnimatedVisibility>
-  );
-};
+  )
+}

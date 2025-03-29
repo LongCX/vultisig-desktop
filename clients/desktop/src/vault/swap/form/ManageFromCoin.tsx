@@ -1,8 +1,13 @@
-import { useFromCoin } from '../state/fromCoin';
-import { SwapCoinInput } from './SwapCoinInput';
+import { SideProvider } from '../providers/SideProvider'
+import { useFromCoin } from '../state/fromCoin'
+import { SwapCoinInput } from './SwapCoinInput'
 
 export const ManageFromCoin = () => {
-  const [value, setValue] = useFromCoin();
+  const [value, setValue] = useFromCoin()
 
-  return <SwapCoinInput value={value} onChange={setValue} />;
-};
+  return (
+    <SideProvider value="from">
+      <SwapCoinInput value={value} onChange={setValue} />
+    </SideProvider>
+  )
+}

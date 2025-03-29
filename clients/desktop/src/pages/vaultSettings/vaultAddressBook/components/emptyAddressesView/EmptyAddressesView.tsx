@@ -1,24 +1,24 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../../../lib/ui/buttons/Button';
-import { PageHeaderBackButton } from '../../../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../../../ui/page/PageHeaderTitle';
-import { AddressBookPageHeader } from '../../AddressBookSettingsPage.styles';
+import { Button } from '../../../../../lib/ui/buttons/Button'
+import { PageHeaderBackButton } from '../../../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../../../ui/page/PageHeaderTitle'
+import { AddressBookPageHeader } from '../../AddressBookSettingsPage.styles'
 import {
   CenteredBox,
   Container,
   ResponsiveImage,
   ResponsiveText,
-} from './EmptyAddressView.styles';
+} from './EmptyAddressView.styles'
 
 type EmptyAddressesViewProps = {
-  onOpenAddAddressView: () => void;
-};
+  onOpenAddAddressView: () => void
+}
 
 const EmptyAddressesView = ({
   onOpenAddAddressView,
 }: EmptyAddressesViewProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <>
@@ -41,12 +41,10 @@ const EmptyAddressesView = ({
             {t('vault_settings_address_book_no_addresses_title')}
           </ResponsiveText>
         </CenteredBox>
-        <Button onClick={onOpenAddAddressView}>
-          {t('vault_settings_address_book_add_addresses_button')}
-        </Button>
+        <Button onClick={onOpenAddAddressView}>{t('add_address')}</Button>
       </Container>
     </>
-  );
-};
+  )
+}
 
-export default EmptyAddressesView;
+export default EmptyAddressesView

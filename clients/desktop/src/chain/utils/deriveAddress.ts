@@ -1,18 +1,17 @@
+import { Chain } from '@core/chain/Chain'
+import { getCoinType } from '@core/chain/coin/coinType'
 import {
   PublicKey,
   WalletCore,
-} from '@trustwallet/wallet-core/dist/src/wallet-core';
-
-import { Chain } from '../../model/chain';
-import { getCoinType } from '../walletCore/getCoinType';
+} from '@trustwallet/wallet-core/dist/src/wallet-core'
 
 type DeriveAddressInput = {
-  chain: Chain;
-  publicKey: PublicKey;
-  walletCore: WalletCore;
-};
+  chain: Chain
+  publicKey: PublicKey
+  walletCore: WalletCore
+}
 
-const bitcoinCashPrefix = 'bitcoincash:';
+const bitcoinCashPrefix = 'bitcoincash:'
 
 export const deriveAddress = ({
   chain,
@@ -22,24 +21,24 @@ export const deriveAddress = ({
   const coinType = getCoinType({
     chain,
     walletCore,
-  });
+  })
 
   if (chain === Chain.MayaChain) {
     return walletCore.AnyAddress.createBech32WithPublicKey(
       publicKey,
       coinType,
       'maya'
-    ).description();
+    ).description()
   }
 
   const address = walletCore.CoinTypeExt.deriveAddressFromPublicKey(
     coinType,
     publicKey
-  );
+  )
 
   if (chain === Chain.BitcoinCash && address.startsWith(bitcoinCashPrefix)) {
-    return address.slice(bitcoinCashPrefix.length);
+    return address.slice(bitcoinCashPrefix.length)
   }
 
-  return address;
-};
+  return address
+}

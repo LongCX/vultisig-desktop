@@ -1,12 +1,33 @@
-import { readFileAsArrayBuffer } from '@lib/utils/file/readFileAsArrayBuffer';
-import { getVaultBackupExtension } from '../VaultBackupExtension';
-import { vaultBackupResultFromFileContent } from './vaultBackupResultFromString';
+import { readFileAsArrayBuffer } from '@lib/utils/file/readFileAsArrayBuffer'
 
-export const vaultBackupResultFromFile = async (file: File) => {
-  const fileContent = await readFileAsArrayBuffer(file);
+import { getVaultBackupExtension } from '../VaultBackupExtension'
+import { FileBasedVaultBackupResult } from '../VaultBakupResult'
+import { isLikelyToBeDklsVaultBackup } from './isLikelyToBeDklsVaultBackup'
+import { vaultBackupResultFromFileContent } from './vaultBackupResultFromString'
 
-  return vaultBackupResultFromFileContent({
+export const vaultBackupResultFromFile = async (
+  file: File
+): Promise<FileBasedVaultBackupResult> => {
+  const fileContent = await readFileAsArrayBuffer(file)
+
+  const result = vaultBackupResultFromFileContent({
     value: fileContent,
     extension: getVaultBackupExtension(file.name),
-  });
-};
+  })
+
+  if (
+    isLikelyToBeDklsVaultBackup({
+      size: file.size,
+      fileName: file.name,
+    })
+  ) {
+    return {
+      result,
+      override: { lib_type: 'DKLS' },
+    }
+  }
+
+  return {
+    result,
+  }
+}

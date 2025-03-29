@@ -1,29 +1,24 @@
-import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
+import { IndexProp, IsActiveProp, StatusProp, ValueProp } from '@lib/ui/props'
+import { match } from '@lib/utils/match'
+import { useTranslation } from 'react-i18next'
+import styled from 'styled-components'
 
-import { borderRadius } from '../../../lib/ui/css/borderRadius';
-import { horizontalPadding } from '../../../lib/ui/css/horizontalPadding';
-import { toSizeUnit } from '../../../lib/ui/css/toSizeUnit';
-import { hStack } from '../../../lib/ui/layout/Stack';
+import { borderRadius } from '../../../lib/ui/css/borderRadius'
+import { horizontalPadding } from '../../../lib/ui/css/horizontalPadding'
+import { toSizeUnit } from '../../../lib/ui/css/toSizeUnit'
+import { hStack } from '../../../lib/ui/layout/Stack'
+import { text } from '../../../lib/ui/text'
 import {
-  IndexProp,
-  IsActiveProp,
-  StatusProp,
-  ValueProp,
-} from '../../../lib/ui/props';
-import { text } from '../../../lib/ui/text';
-import { match } from '@lib/utils/match';
-import {
-  formatKeygenDeviceName,
+  formatMpcDeviceName,
   parseLocalPartyId,
-} from '../../keygen/utils/localPartyId';
+} from '../../../mpc/localPartyId'
 
-type ReshareDeviceStatus = 'add' | 'remove';
+type ReshareDeviceStatus = 'add' | 'remove'
 
 type ReshareDeviceItemProps = ValueProp<string> &
   IndexProp &
   IsActiveProp &
-  StatusProp<ReshareDeviceStatus>;
+  StatusProp<ReshareDeviceStatus>
 
 const Container = styled.div<StatusProp<ReshareDeviceStatus>>`
   height: ${toSizeUnit(64)};
@@ -44,7 +39,7 @@ const Container = styled.div<StatusProp<ReshareDeviceStatus>>`
       add: () => colors.primary.getVariant({ a: () => 0.5 }),
       remove: () => colors.danger.getVariant({ a: () => 0.35 }),
     }).toCssValue()};
-`;
+`
 
 export const ReshareDeviceItem: React.FC<ReshareDeviceItemProps> = ({
   value,
@@ -52,13 +47,13 @@ export const ReshareDeviceItem: React.FC<ReshareDeviceItemProps> = ({
   isActive,
   status,
 }) => {
-  const { deviceName } = parseLocalPartyId(value);
+  const { deviceName } = parseLocalPartyId(value)
 
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <Container status={status}>
-      {index + 1}. {formatKeygenDeviceName(deviceName)} (
+      {index + 1}. {formatMpcDeviceName(deviceName)} (
       {isActive
         ? t('this_device')
         : match(status, {
@@ -67,5 +62,5 @@ export const ReshareDeviceItem: React.FC<ReshareDeviceItemProps> = ({
           })}
       )
     </Container>
-  );
-};
+  )
+}

@@ -1,55 +1,43 @@
-import { shouldBePresent } from '@lib/utils/assert/shouldBePresent';
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { useInvalidateQueriesMutation } from '@lib/ui/query/hooks/useInvalidateQueriesMutation'
+import { useTranslation } from 'react-i18next'
 
-import { areEqualCoins } from '../../../coin/Coin';
-import { useBalanceQuery } from '../../../coin/query/useBalanceQuery';
-import { useCoinPriceQuery } from '../../../coin/query/useCoinPriceQuery';
-import { getCoinKey } from '../../../coin/utils/coin';
-import {
-  getStorageCoinKey,
-  storageCoinToCoin,
-} from '../../../coin/utils/storageCoin';
-import { RefreshIcon } from '../../../lib/ui/icons/RefreshIcon';
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { Spinner } from '../../../lib/ui/loaders/Spinner';
-import { Panel } from '../../../lib/ui/panel/Panel';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderIconButton } from '../../../ui/page/PageHeaderIconButton';
-import { PageHeaderIconButtons } from '../../../ui/page/PageHeaderIconButtons';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { VaultPrimaryActions } from '../../components/VaultPrimaryActions';
-import { useCurrentVaultCoins } from '../../state/currentVault';
-import { VaultChainCoinItem } from '../VaultChainCoinItem';
-import { useCurrentVaultCoinKey } from './useCurrentVaultCoinKey';
+import { useBalanceQuery } from '../../../coin/query/useBalanceQuery'
+import { getBalanceQueryKey } from '../../../coin/query/useBalancesQuery'
+import { useCoinPriceQuery } from '../../../coin/query/useCoinPriceQuery'
+import { RefreshIcon } from '../../../lib/ui/icons/RefreshIcon'
+import { Center } from '../../../lib/ui/layout/Center'
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { Spinner } from '../../../lib/ui/loaders/Spinner'
+import { Panel } from '../../../lib/ui/panel/Panel'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderIconButton } from '../../../ui/page/PageHeaderIconButton'
+import { PageHeaderIconButtons } from '../../../ui/page/PageHeaderIconButtons'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { VaultPrimaryActions } from '../../components/VaultPrimaryActions'
+import { useCurrentVaultCoin } from '../../state/currentVault'
+import { VaultChainCoinItem } from '../VaultChainCoinItem'
+import { useCurrentVaultCoinKey } from './useCurrentVaultCoinKey'
 
 export const VaultChainCoinPage = () => {
-  const coinKey = useCurrentVaultCoinKey();
+  const coinKey = useCurrentVaultCoinKey()
+  const coin = useCurrentVaultCoin(coinKey)
 
-  const coins = useCurrentVaultCoins();
-
-  const coin = useMemo(() => {
-    return storageCoinToCoin(
-      shouldBePresent(
-        coins.find(coin => areEqualCoins(getStorageCoinKey(coin), coinKey))
-      )
-    );
-  }, [coins, coinKey]);
-
-  const balanceQuery = useBalanceQuery(coin);
-  const { refetch, isFetching } = balanceQuery;
+  const balanceQuery = useBalanceQuery({
+    ...coinKey,
+    address: coin.address,
+  })
 
   const priceQuery = useCoinPriceQuery({
-    coin: {
-      ...coinKey,
-      priceProviderId: coin.priceProviderId,
-    },
-  });
+    coin,
+  })
 
-  const { t } = useTranslation();
+  const { mutate: invalidateQueries, isPending: isInvalidating } =
+    useInvalidateQueriesMutation()
+
+  const { t } = useTranslation()
 
   return (
     <VStack flexGrow data-testid="ManageVaultChainCoinPage-Coin">
@@ -58,38 +46,45 @@ export const VaultChainCoinPage = () => {
         secondaryControls={
           <PageHeaderIconButtons>
             <PageHeaderIconButton
-              onClick={() => refetch()}
-              icon={isFetching ? <Spinner /> : <RefreshIcon />}
+              onClick={() =>
+                invalidateQueries(
+                  getBalanceQueryKey({
+                    ...coinKey,
+                    address: coin.address,
+                  })
+                )
+              }
+              icon={isInvalidating ? <Spinner /> : <RefreshIcon />}
             />
           </PageHeaderIconButtons>
         }
         title={<PageHeaderTitle>{coin.ticker}</PageHeaderTitle>}
       />
       <PageContent gap={16}>
-        <VaultPrimaryActions value={getCoinKey(coin)} />
+        <VaultPrimaryActions value={coin} />
         <Panel>
           <MatchQuery
             value={balanceQuery}
-            error={() => t('failed_to_load')}
-            pending={() => t('loading')}
-            success={({ amount, decimals }) => {
-              const price = priceQuery.data;
+            error={() => <Center>{t('failed_to_load')}</Center>}
+            pending={() => <Center>{t('loading')}</Center>}
+            success={amount => {
+              const price = priceQuery.data
               return (
                 <VaultChainCoinItem
                   value={{
                     amount,
-                    decimals,
+                    decimals: coin.decimals,
                     logo: coin.logo,
                     ticker: coin.ticker,
                     price,
                     ...coinKey,
                   }}
                 />
-              );
+              )
             }}
           />
         </Panel>
       </PageContent>
     </VStack>
-  );
-};
+  )
+}

@@ -1,15 +1,15 @@
-import { t } from 'i18next';
-import { useDropzone } from 'react-dropzone';
+import { t } from 'i18next'
+import { useDropzone } from 'react-dropzone'
 
-import { FileIcon } from '../../../lib/ui/icons/FileIcon';
-import { InteractiveDropZoneContainer } from '../../../lib/ui/inputs/upload/DropZoneContainer';
-import { DropZoneContent } from '../../../lib/ui/inputs/upload/DropZoneContent';
-import { StrictText } from '../../../lib/ui/text';
-import { vaultBackupExtensions } from '../VaultBackupExtension';
+import { CloudUploadIcon } from '../../../lib/ui/icons/CloudUploadIcon'
+import { InteractiveDropZoneContainer } from '../../../lib/ui/inputs/upload/DropZoneContainer'
+import { DropZoneContent } from '../../../lib/ui/inputs/upload/DropZoneContent'
+import { Text } from '../../../lib/ui/text'
+import { vaultBackupExtensions } from '../VaultBackupExtension'
 
 type BackupFileDropzoneProps = {
-  onFinish: (data: File) => void;
-};
+  onFinish: (data: File) => void
+}
 
 export const BackupFileDropzone = ({ onFinish }: BackupFileDropzoneProps) => {
   const { getRootProps, getInputProps } = useDropzone({
@@ -19,22 +19,28 @@ export const BackupFileDropzone = ({ onFinish }: BackupFileDropzoneProps) => {
       ),
     },
     onDrop: acceptedFiles => {
-      const [file] = acceptedFiles;
+      const [file] = acceptedFiles
       if (file) {
-        onFinish(file);
+        onFinish(file)
       }
     },
-  });
+  })
 
   return (
     <>
-      <StrictText centerHorizontally>{t('upload_previous_vault')}</StrictText>
       <InteractiveDropZoneContainer {...getRootProps()}>
-        <DropZoneContent icon={<FileIcon />}>
-          {t('select_backup_file')}
+        <DropZoneContent
+          icon={
+            <div style={{ color: '#2155DF' }}>
+              <CloudUploadIcon />
+            </div>
+          }
+        >
+          <Text color="supporting">{t('select_backup_file')}</Text>
         </DropZoneContent>
         <input {...getInputProps()} />
       </InteractiveDropZoneContainer>
+      <Text color="shy">Supported file types: .bak & .vult</Text>
     </>
-  );
-};
+  )
+}

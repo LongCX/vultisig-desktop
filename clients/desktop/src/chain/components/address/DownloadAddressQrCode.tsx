@@ -1,8 +1,9 @@
-import { FileUpIcon } from '../../../lib/ui/icons/FileUpIcon';
-import { ValueProp } from '../../../lib/ui/props';
-import { SaveAsImage } from '../../../ui/file/SaveAsImage';
-import { PageHeaderIconButton } from '../../../ui/page/PageHeaderIconButton';
-import { PrintableQrCode } from '../../../ui/qr/PrintableQrCode';
+import { ValueProp } from '@lib/ui/props'
+
+import { FileUpIcon } from '../../../lib/ui/icons/FileUpIcon'
+import { SaveAsImage } from '../../../ui/file/SaveAsImage'
+import { PageHeaderIconButton } from '../../../ui/page/PageHeaderIconButton'
+import { PrintableQrCode } from '../../../ui/qr/PrintableQrCode'
 
 export const DownloadAddressQrCode = ({ value }: ValueProp<string>) => {
   return (
@@ -13,5 +14,5 @@ export const DownloadAddressQrCode = ({ value }: ValueProp<string>) => {
       )}
       value={<PrintableQrCode title={value} value={value} />}
     />
-  );
-};
+  )
+}

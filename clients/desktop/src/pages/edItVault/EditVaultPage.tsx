@@ -1,34 +1,38 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { UnstyledButton } from '../../lib/ui/buttons/UnstyledButton';
-import { ChevronRightIcon } from '../../lib/ui/icons/ChevronRightIcon';
-import { HStack, VStack } from '../../lib/ui/layout/Stack';
-import { Text } from '../../lib/ui/text';
-import { useAppNavigate } from '../../navigation/hooks/useAppNavigate';
-import { PageHeader } from '../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../ui/page/PageHeaderTitle';
-import { PageSlice } from '../../ui/page/PageSlice';
-import { useCurrentVault } from '../../vault/state/currentVault';
-import { editVaultSettingsItems } from './constants';
+import { UnstyledButton } from '../../lib/ui/buttons/UnstyledButton'
+import { ChevronRightIcon } from '../../lib/ui/icons/ChevronRightIcon'
+import { HStack, VStack } from '../../lib/ui/layout/Stack'
+import { Text } from '../../lib/ui/text'
+import { useAppNavigate } from '../../navigation/hooks/useAppNavigate'
+import { PageHeader } from '../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../ui/page/PageHeaderTitle'
+import { PageSlice } from '../../ui/page/PageSlice'
+import { useCurrentVault } from '../../vault/state/currentVault'
+import { getEditVaultSettingsItems } from './constants'
 import {
   AutoCenteredTitle,
   Container,
   IconWrapper,
   ListItemPanel,
   TextWrapper,
-} from './EditVaultPage.styles';
+} from './EditVaultPage.styles'
 
 const EditVaultPage = () => {
-  const { t } = useTranslation();
-  const navigate = useAppNavigate();
-  const currentVault = useCurrentVault();
+  const { t } = useTranslation()
+  const navigate = useAppNavigate()
+  const currentVault = useCurrentVault()
 
   if (!currentVault) {
-    return <></>;
+    return <></>
   }
 
-  const { local_party_id } = currentVault;
+  const { local_party_id } = currentVault
+  let items = getEditVaultSettingsItems(t)
+  if (currentVault.lib_type === 'DKLS') {
+    items = items.filter(item => item.path !== 'migrateVaultSecure')
+  }
 
   return (
     <Container flexGrow gap={16}>
@@ -42,8 +46,8 @@ const EditVaultPage = () => {
           {local_party_id}
         </AutoCenteredTitle>
         <VStack flexGrow gap={12}>
-          {editVaultSettingsItems.map(
-            ({ path, titleKey, subtitleKey, icon: Icon, textColor }, index) => (
+          {items.map(
+            ({ path, title, subtitle, icon: Icon, textColor }, index) => (
               <UnstyledButton key={index} onClick={() => navigate(path)}>
                 <ListItemPanel>
                   <HStack
@@ -58,13 +62,13 @@ const EditVaultPage = () => {
                       <TextWrapper>
                         <Text
                           size={14}
-                          weight="500"
+                          weight="600"
                           color={textColor || 'contrast'}
                         >
-                          {t(titleKey)}
+                          {title}
                         </Text>
                         <Text size={12} color={textColor || 'supporting'}>
-                          {t(subtitleKey)}
+                          {subtitle}
                         </Text>
                       </TextWrapper>
                     </HStack>
@@ -77,7 +81,7 @@ const EditVaultPage = () => {
         </VStack>
       </PageSlice>
     </Container>
-  );
-};
+  )
+}
 
-export default EditVaultPage;
+export default EditVaultPage

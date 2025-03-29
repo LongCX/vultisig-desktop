@@ -1,40 +1,40 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { getStoredCurrency, setStoredCurrency } from "../../../../utils/storage";
-import { Currency, currencyName } from "../../../../utils/constants";
-import useGoBack from "../../../../hooks/go-back";
-import messageKeys from "../../../../utils/message-keys";
-import routeKeys from "../../../../utils/route-keys";
-
-import { ArrowLeft } from "../../../../icons";
+import useGoBack from '@clients/extension/src/hooks/go-back'
+import { ArrowLeft } from '@clients/extension/src/icons'
+import { Currency, currencyName } from '@clients/extension/src/utils/constants'
+import routeKeys from '@clients/extension/src/utils/route-keys'
+import {
+  getStoredCurrency,
+  setStoredCurrency,
+} from '@clients/extension/src/utils/storage'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface InitialState {
-  currency: Currency;
+  currency: Currency
 }
 
 const Component = () => {
-  const { t } = useTranslation();
-  const initialState: InitialState = { currency: Currency.USD };
-  const [state, setState] = useState(initialState);
-  const { currency } = state;
-  const goBack = useGoBack();
+  const { t } = useTranslation()
+  const initialState: InitialState = { currency: Currency.USD }
+  const [state, setState] = useState(initialState)
+  const { currency } = state
+  const goBack = useGoBack()
 
-  const changeLanguage = (currency: Currency) => {
+  const changeCurrency = (currency: Currency) => {
     setStoredCurrency(currency).then(() => {
-      setState((prevState) => ({ ...prevState, currency }));
+      setState(prevState => ({ ...prevState, currency }))
 
-      goBack(routeKeys.settings.root);
-    });
-  };
+      goBack(routeKeys.settings.root)
+    })
+  }
 
   const componentDidMount = (): void => {
-    getStoredCurrency().then((currency) => {
-      setState((prevState) => ({ ...prevState, currency }));
-    });
-  };
+    getStoredCurrency().then(currency => {
+      setState(prevState => ({ ...prevState, currency }))
+    })
+  }
 
-  useEffect(componentDidMount, []);
+  useEffect(componentDidMount, [])
 
   const data = [
     {
@@ -77,12 +77,12 @@ const Component = () => {
       key: Currency.SEK,
       title: currencyName[Currency.SEK],
     },
-  ];
+  ]
 
   return (
     <div className="layout currency-page">
       <div className="header">
-        <span className="heading">{t(messageKeys.CURRENCY)}</span>
+        <span className="heading">{t('currency')}</span>
         <ArrowLeft
           className="icon icon-left"
           onClick={() => goBack(routeKeys.settings.root)}
@@ -91,19 +91,19 @@ const Component = () => {
       <div className="content">
         <div className="list list-action">
           {data.map(({ key, title }) => (
-            <div
+            <button
               key={key}
-              className={`list-item${key === currency ? " active" : ""}`}
-              onClick={() => changeLanguage(key)}
+              className={`list-item${key === currency ? ' active' : ''}`}
+              onClick={() => changeCurrency(key)}
             >
               <span className="label">{title}</span>
               <span className="extra">{key}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Component;
+export default Component

@@ -1,35 +1,36 @@
-import { useTranslation } from 'react-i18next';
+import { KeygenType } from '@core/mpc/keygen/KeygenType'
+import { match } from '@lib/utils/match'
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../lib/ui/buttons/Button';
-import { FilledAlertIcon } from '../../../lib/ui/icons/FilledAlertIcon';
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { WarningBlock } from '../../../lib/ui/status/WarningBlock';
-import { Text } from '../../../lib/ui/text';
-import { match } from '@lib/utils/match';
-import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack';
-import { PageContent } from '../../../ui/page/PageContent';
-import { KeygenType } from '../KeygenType';
-import { useCurrentKeygenType } from '../state/currentKeygenType';
+import { Button } from '../../../lib/ui/buttons/Button'
+import { FilledAlertIcon } from '../../../lib/ui/icons/FilledAlertIcon'
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { WarningBlock } from '../../../lib/ui/status/WarningBlock'
+import { Text } from '../../../lib/ui/text'
+import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack'
+import { PageContent } from '../../../ui/page/PageContent'
+import { useCurrentKeygenType } from '../state/currentKeygenType'
 
 type KeygenFailedStatePros = {
-  message: string;
-  onTryAgain?: () => void;
-};
+  message: string
+  onTryAgain?: () => void
+}
 
 export const KeygenFailedState = ({
   message,
   onTryAgain,
 }: KeygenFailedStatePros) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const keygenType = useCurrentKeygenType();
+  const keygenType = useCurrentKeygenType()
 
   const title = match(keygenType, {
     [KeygenType.Keygen]: () => t('keygen'),
+    [KeygenType.Migrate]: () => t('migrate'),
     [KeygenType.Reshare]: () => t('reshare'),
-  });
+  })
 
-  const goBack = useNavigateBack();
+  const goBack = useNavigateBack()
 
   return (
     <PageContent>
@@ -59,5 +60,5 @@ export const KeygenFailedState = ({
         <Button onClick={onTryAgain || goBack}>{t('try_again')}</Button>
       </VStack>
     </PageContent>
-  );
-};
+  )
+}

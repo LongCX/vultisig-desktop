@@ -1,47 +1,44 @@
-import { useTranslation } from 'react-i18next';
+import { ChildrenProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { useTranslation } from 'react-i18next'
 
-import { ChildrenProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { useAppPathState } from '../../../navigation/hooks/useAppPathState';
-import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { useKeygenServerUrlQuery } from '../../keygen/server/queries/useKeygenServerUrlQuery';
-import { PendingKeygenMessage } from '../../keygen/shared/PendingKeygenMessage';
-import { CurrentServerTypeProvider } from '../../keygen/state/currentServerType';
-import { CurrentServerUrlProvider } from '../../keygen/state/currentServerUrl';
+import { MpcServerTypeProvider } from '../../../mpc/serverType/state/mpcServerType'
+import { MpcServerUrlProvider } from '../../../mpc/serverType/state/mpcServerUrl'
+import { useAppPathState } from '../../../navigation/hooks/useAppPathState'
+import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { useKeygenServerUrlQuery } from '../../keygen/server/queries/useKeygenServerUrlQuery'
+import { PendingKeygenMessage } from '../../keygen/shared/PendingKeygenMessage'
 
 export const KeysignServerUrlProvider = ({ children }: ChildrenProp) => {
   const {
     keysignMsg: { serviceName, useVultisigRelay },
-  } = useAppPathState<'joinKeysign'>();
+  } = useAppPathState<'joinKeysign'>()
 
-  const serverType = useVultisigRelay ? 'relay' : 'local';
+  const serverType = useVultisigRelay ? 'relay' : 'local'
 
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   const query = useKeygenServerUrlQuery({
     serverType,
     serviceName,
-  });
+  })
 
   return (
     <MatchQuery
       value={query}
       success={value => (
-        <CurrentServerUrlProvider value={value}>
-          <CurrentServerTypeProvider initialValue={serverType}>
+        <MpcServerUrlProvider value={value}>
+          <MpcServerTypeProvider initialValue={serverType}>
             {children}
-          </CurrentServerTypeProvider>
-        </CurrentServerUrlProvider>
+          </MpcServerTypeProvider>
+        </MpcServerUrlProvider>
       )}
       error={() => (
-        <FullPageFlowErrorState
-          title={t('join_keysign')}
-          message={t('failed_to_discover_mediator')}
-        />
+        <FullPageFlowErrorState message={t('failed_to_discover_mediator')} />
       )}
       pending={() => (
         <>
@@ -57,5 +54,5 @@ export const KeysignServerUrlProvider = ({ children }: ChildrenProp) => {
         </>
       )}
     />
-  );
-};
+  )
+}

@@ -1,19 +1,19 @@
-import { EntityWithTicker } from '@lib/utils/entities/EntityWithTicker';
-import { match } from '@lib/utils/match';
-import { TransferDirection } from '@lib/utils/TransferDirection';
-import { TW } from '@trustwallet/wallet-core';
+import { CoinKey } from '@core/chain/coin/Coin'
+import { isFeeCoin } from '@core/chain/coin/utils/isFeeCoin'
+import { EntityWithTicker } from '@lib/utils/entities/EntityWithTicker'
+import { match } from '@lib/utils/match'
+import { TransferDirection } from '@lib/utils/TransferDirection'
+import { TW } from '@trustwallet/wallet-core'
 
-import { CoinKey } from '../../../../../coin/Coin';
-import { isNativeCoin } from '../../../../utils/isNativeCoin';
 import {
   ThorchainSwapEnabledChain,
   thorchainSwapProtoChains,
-} from '../thorchainSwapProtoChains';
+} from '../thorchainSwapProtoChains'
 
 type Input = CoinKey &
   EntityWithTicker & {
-    direction: TransferDirection;
-  };
+    direction: TransferDirection
+  }
 
 export const toThorchainSwapAssetProto = ({
   ticker,
@@ -24,7 +24,7 @@ export const toThorchainSwapAssetProto = ({
   TW.THORChainSwap.Proto.Asset.create({
     chain: thorchainSwapProtoChains[chain as ThorchainSwapEnabledChain],
     symbol: ticker,
-    ...(isNativeCoin({ chain, id })
+    ...(isFeeCoin({ chain, id })
       ? {}
       : {
           tokenId: match(direction, {
@@ -32,4 +32,4 @@ export const toThorchainSwapAssetProto = ({
             to: () => `${ticker}-${id.slice(-6).toUpperCase()}`,
           }),
         }),
-  });
+  })

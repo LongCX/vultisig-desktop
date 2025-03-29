@@ -1,21 +1,24 @@
-import { Fetch } from '../../../../wailsjs/go/utils/GoHttp';
-import { ChainAccount } from '../../../chain/ChainAccount';
-import { getEvmChainId } from '../../../chain/evm/chainInfo';
-import { EvmChain } from '../../../model/chain';
-import { CoinMeta } from '../../../model/coin-meta';
-import { Endpoint } from '../../../services/Endpoint';
-import { oneInchTokenToCoinMeta } from '../../oneInch/token';
+import { EvmChain } from '@core/chain/Chain'
+import { ChainAccount } from '@core/chain/ChainAccount'
+import { getEvmChainId } from '@core/chain/chains/evm/chainInfo'
+import { rootApiUrl } from '@core/config'
+import { withoutUndefined } from '@lib/utils/array/withoutUndefined'
+import { queryUrl } from '@lib/utils/query/queryUrl'
+
+import { fromOneInchTokens, OneInchToken } from '../../oneInch/token'
+
+interface OneInchBalanceResponse {
+  [tokenAddress: string]: string
+}
 
 export const findEvmAccountCoins = async (account: ChainAccount<EvmChain>) => {
-  const oneInchChainId = getEvmChainId(account.chain);
-  const oneInchEndpoint = Endpoint.fetch1InchsTokensBalance(
-    oneInchChainId.toString(),
-    account.address
-  );
+  const oneInchChainId = getEvmChainId(account.chain)
 
-  const balanceData = await Fetch(oneInchEndpoint);
+  const url = `${rootApiUrl}/1inch/balance/v1.2/${oneInchChainId}/balances/${account.address}`
 
-  await new Promise(resolve => setTimeout(resolve, 1000)); // We have some rate limits on 1 inch, so I will wait a bit
+  const balanceData = await queryUrl<OneInchBalanceResponse>(url)
+
+  await new Promise(resolve => setTimeout(resolve, 1000)) // We have some rate limits on 1 inch, so I will wait a bit
 
   // Filter tokens with non-zero balance
   const nonZeroBalanceTokenAddresses = Object.entries(balanceData)
@@ -24,30 +27,25 @@ export const findEvmAccountCoins = async (account: ChainAccount<EvmChain>) => {
     .filter(
       tokenAddress =>
         tokenAddress !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-    );
+    )
 
   if (nonZeroBalanceTokenAddresses.length === 0) {
-    return [];
+    return []
   }
 
   // Fetch token information for the non-zero balance tokens
-  const tokenInfoEndpoint = Endpoint.fetch1InchsTokensInfo(
-    oneInchChainId.toString(),
-    nonZeroBalanceTokenAddresses
-  );
+  const tokenInfoUrl = `${rootApiUrl}/1inch/token/v1.2/${oneInchChainId}/custom?addresses=${nonZeroBalanceTokenAddresses.join(',')}`
+  const tokenInfoData =
+    await queryUrl<Record<string, OneInchToken>>(tokenInfoUrl)
 
-  const tokenInfoData = await Fetch(tokenInfoEndpoint);
+  const tokens = withoutUndefined(
+    nonZeroBalanceTokenAddresses.map(
+      tokenAddress => tokenInfoData[tokenAddress]
+    )
+  )
 
-  // Map the fetched token information to CoinMeta[] format
-  return nonZeroBalanceTokenAddresses
-    .map(tokenAddress => {
-      const tokenInfo = tokenInfoData[tokenAddress];
-      if (!tokenInfo) return null;
-
-      return oneInchTokenToCoinMeta({
-        token: tokenInfo,
-        chain: account.chain,
-      });
-    })
-    .filter((token): token is CoinMeta => token !== null);
-};
+  return fromOneInchTokens({
+    tokens,
+    chain: account.chain,
+  })
+}

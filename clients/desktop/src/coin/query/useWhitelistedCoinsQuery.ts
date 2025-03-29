@@ -1,35 +1,43 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { Fetch } from '../../../wailsjs/go/utils/GoHttp';
-import { getEvmChainId } from '../../chain/evm/chainInfo';
-import { Chain, EvmChain } from '../../model/chain';
-import { Endpoint } from '../../services/Endpoint';
+import { Chain, EvmChain } from '@core/chain/Chain'
+import { getEvmChainId } from '@core/chain/chains/evm/chainInfo'
 import {
-  OneInchTokensResponse,
-  oneInchTokenToCoinMeta,
-} from '../oneInch/token';
+  fromSolanaJupiterTokens,
+  SolanaJupiterToken,
+} from '@core/chain/coin/jupiter/token'
+import { rootApiUrl } from '@core/config'
+import { queryUrl } from '@lib/utils/query/queryUrl'
+import { useQuery } from '@tanstack/react-query'
+
+import { fromOneInchTokens, OneInchTokensResponse } from '../oneInch/token'
 
 export const useWhitelistedCoinsQuery = (chain: Chain) => {
   return useQuery({
     queryKey: ['whitelistedCoins', chain],
     queryFn: async () => {
-      const evmChainId = getEvmChainId(chain as EvmChain);
-      if (evmChainId) {
-        const data = (await Fetch(
-          Endpoint.fetchTokens(evmChainId)
-        )) as OneInchTokensResponse;
+      if (chain === Chain.Solana) {
+        const url = 'https://tokens.jup.ag/tokens?tags=verified'
+        const data = await queryUrl<SolanaJupiterToken[]>(url) // Jupiter API returns an array
 
-        const oneInchTokens = Object.values(data.tokens);
+        return fromSolanaJupiterTokens({
+          tokens: data,
+          chain,
+        })
+      } else {
+        const evmChainId = getEvmChainId(chain as EvmChain)
+        if (evmChainId) {
+          const url = `${rootApiUrl}/1inch/swap/v6.0/${evmChainId}/tokens`
+          const data = await queryUrl<OneInchTokensResponse>(url)
 
-        return oneInchTokens.map(token =>
-          oneInchTokenToCoinMeta({
-            token,
+          const oneInchTokens = Object.values(data.tokens)
+
+          return fromOneInchTokens({
+            tokens: oneInchTokens,
             chain,
           })
-        );
+        }
       }
 
-      return [];
+      return []
     },
-  });
-};
+  })
+}

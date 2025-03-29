@@ -1,87 +1,95 @@
-import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { KeysignMessagePayload } from '@core/mpc/keysign/keysignPayload/KeysignMessagePayload'
+import { OnBackProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
-import { KeysignMessagePayload } from '../../../chain/keysign/KeysignMessagePayload';
-import { CurrentTxHashProvider } from '../../../chain/state/currentTxHash';
-import { TxOverviewPanel } from '../../../chain/tx/components/TxOverviewPanel';
-import { TxOverviewChainDataRow } from '../../../chain/tx/components/TxOverviewRow';
-import { MatchRecordUnion } from '../../../lib/ui/base/MatchRecordUnion';
-import { Button } from '../../../lib/ui/buttons/Button';
-import { ProgressLine } from '../../../lib/ui/flow/ProgressLine';
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { OnBackProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { makeAppPath } from '../../../navigation';
-import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { KeygenNetworkReminder } from '../../keygen/shared/KeygenNetworkReminder';
-import { MatchKeygenSessionStatus } from '../../keygen/shared/MatchKeygenSessionStatus';
-import { PendingKeygenMessage } from '../../keygen/shared/PendingKeygenMessage';
-import { KeysignCustomMessageInfo } from '../join/verify/KeysignCustomMessageInfo';
-import { KeysignSigningState } from './KeysignSigningState';
-import { KeysignTxOverview } from './KeysignTxOverview';
-import { useKeysignMutation } from './mutations/useKeysignMutation';
-import { WithProgressIndicator } from './WithProgressIndicator';
+import { CurrentTxHashProvider } from '../../../chain/state/currentTxHash'
+import { TxOverviewPanel } from '../../../chain/tx/components/TxOverviewPanel'
+import { TxOverviewChainDataRow } from '../../../chain/tx/components/TxOverviewRow'
+import useVersionCheck from '../../../lib/hooks/useVersionCheck'
+import { Match } from '../../../lib/ui/base/Match'
+import { MatchRecordUnion } from '../../../lib/ui/base/MatchRecordUnion'
+import { Button } from '../../../lib/ui/buttons/Button'
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { Text } from '../../../lib/ui/text'
+import { makeAppPath } from '../../../navigation'
+import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { MatchKeygenSessionStatus } from '../../keygen/shared/MatchKeygenSessionStatus'
+import { KeysignCustomMessageInfo } from '../join/verify/KeysignCustomMessageInfo'
+import { KeysignSigningState } from './KeysignSigningState'
+import { KeysignTxOverview } from './KeysignTxOverview'
+import { useKeysignMutation } from './mutations/useKeysignMutation'
+import { SwapKeysignTxOverview } from './SwapKeysignTxOverview'
 
 type KeysignSigningStepProps = {
-  payload: KeysignMessagePayload;
-} & Partial<OnBackProp>;
+  payload: KeysignMessagePayload
+} & Partial<OnBackProp>
 
 export const KeysignSigningStep = ({
   onBack,
   payload,
 }: KeysignSigningStepProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
+  const { localVersion } = useVersionCheck()
 
   const { mutate: startKeysign, ...mutationStatus } =
-    useKeysignMutation(payload);
+    useKeysignMutation(payload)
 
-  useEffect(() => startKeysign(), [startKeysign]);
+  useEffect(startKeysign, [startKeysign])
 
   return (
     <MatchQuery
       value={mutationStatus}
       success={value => (
         <>
-          <PageHeader title={<PageHeaderTitle>{t('done')}</PageHeaderTitle>} />
+          <PageHeader
+            title={<PageHeaderTitle>{t('overview')}</PageHeaderTitle>}
+          />
           <PageContent>
-            <WithProgressIndicator value={1}>
-              <TxOverviewPanel>
-                <MatchRecordUnion
-                  value={payload}
-                  handlers={{
-                    keysign: payload => (
-                      <CurrentTxHashProvider value={value}>
-                        <KeysignTxOverview value={payload} />
-                      </CurrentTxHashProvider>
-                    ),
-                    custom: payload => (
-                      <>
-                        <KeysignCustomMessageInfo value={payload} />
-                        <TxOverviewChainDataRow>
-                          <span>{t('signature')}</span>
-                          <span>{value}</span>
-                        </TxOverviewChainDataRow>
-                      </>
-                    ),
-                  }}
-                />
-              </TxOverviewPanel>
-            </WithProgressIndicator>
-            <Link to={makeAppPath('vault')}>
-              <Button as="div">{t('complete')}</Button>
-            </Link>
+            <MatchRecordUnion
+              value={payload}
+              handlers={{
+                keysign: payload => (
+                  <CurrentTxHashProvider value={value}>
+                    <Match
+                      value={payload.swapPayload.value ? 'swap' : 'default'}
+                      swap={() => <SwapKeysignTxOverview value={payload} />}
+                      default={() => (
+                        <>
+                          <TxOverviewPanel>
+                            <KeysignTxOverview value={payload} />
+                          </TxOverviewPanel>
+                          <Link to={makeAppPath('vault')}>
+                            <Button as="div">{t('complete')}</Button>
+                          </Link>
+                        </>
+                      )}
+                    />
+                  </CurrentTxHashProvider>
+                ),
+                custom: payload => (
+                  <TxOverviewPanel>
+                    <KeysignCustomMessageInfo value={payload} />
+                    <TxOverviewChainDataRow>
+                      <span>{t('signature')}</span>
+                      <span>{value}</span>
+                    </TxOverviewChainDataRow>
+                  </TxOverviewPanel>
+                ),
+              }}
+            />
           </PageContent>
         </>
       )}
       error={error => (
         <FullPageFlowErrorState
-          title={t('keysign')}
           message={t('signing_error')}
           errorMessage={extractErrorMsg(error)}
         />
@@ -95,27 +103,18 @@ export const KeysignSigningStep = ({
           <PageContent data-testid="KeysignVerifyStep-PageContent">
             <VStack flexGrow>
               <MatchKeygenSessionStatus
-                pending={() => (
-                  <>
-                    <ProgressLine value={0.75} />
-                    <VStack
-                      flexGrow
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <PendingKeygenMessage>
-                        {t('waiting_for_keysign_start')}
-                      </PendingKeygenMessage>
-                    </VStack>
-                  </>
-                )}
-                active={value => <KeysignSigningState value={value} />}
+                pending={() => <KeysignSigningState />}
+                active={() => <KeysignSigningState />}
               />
             </VStack>
-            <KeygenNetworkReminder />
+            <VStack alignItems="center">
+              <Text color="shy" size={12}>
+                Version {localVersion}
+              </Text>
+            </VStack>
           </PageContent>
         </>
       )}
     />
-  );
-};
+  )
+}

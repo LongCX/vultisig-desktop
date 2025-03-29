@@ -1,25 +1,24 @@
-import { v4 as uuidv4 } from "uuid";
-import { JsonRpcProvider, TransactionRequest, toUtf8String } from "ethers";
-import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-
 import {
-  ChainKey,
+  ThorchainProviderMethod,
+  ThorchainProviderResponse,
+} from '@clients/extension/src/types/thorchain'
+import api from '@clients/extension/src/utils/api'
+import {
   Instance,
+  isSupportedChain,
   MessageKey,
   RequestMethod,
-  chains,
-  cosmosChains,
-  evmChains,
-  rpcUrl,
-} from "../utils/constants";
-import { calculateWindowPosition, findChainByProp } from "../utils/functions";
+} from '@clients/extension/src/utils/constants'
+import { calculateWindowPosition } from '@clients/extension/src/utils/functions'
 import {
   ChainProps,
   ITransaction,
   Messaging,
+  SendTransactionResponse,
+  TransactionDetails,
+  TransactionType,
   VaultProps,
-} from "../utils/interfaces";
-
+} from '@clients/extension/src/utils/interfaces'
 import {
   getIsPriority,
   getStoredChains,
@@ -30,130 +29,197 @@ import {
   setStoredRequest,
   setStoredTransactions,
   setStoredVaults,
-} from "../utils/storage";
-import api from "../utils/api";
+} from '@clients/extension/src/utils/storage'
 import {
-  ThorchainProviderMethod,
-  ThorchainProviderResponse,
-} from "../types/thorchain";
-
-let rpcProvider: JsonRpcProvider;
+  getStandardTransactionDetails,
+  isBasicTransaction,
+} from '@clients/extension/src/utils/tx/getStandardTx'
+import { Chain } from '@core/chain/Chain'
+import { getChainKind } from '@core/chain/ChainKind'
+import { getCosmosClient } from '@core/chain/chains/cosmos/client'
+import { getEvmClient } from '@core/chain/chains/evm/client'
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
+import { getChainByChainId, getChainId } from '@core/chain/coin/ChainId'
+import { chainRpcUrl } from '@core/chain/utils/getChainRpcUrl'
+import {
+  JsonRpcProvider,
+  toUtf8String,
+  TransactionRequest,
+  TypedDataEncoder,
+} from 'ethers'
+import { v4 as uuidv4 } from 'uuid'
+let rpcProvider: JsonRpcProvider
 
 const instance = {
   [Instance.ACCOUNTS]: false,
   [Instance.TRANSACTION]: false,
+  [Instance.VAULT]: false,
   [Instance.VAULTS]: false,
-};
+}
 
 const handleOpenPanel = (name: string): Promise<number> => {
-  return new Promise((resolve) => {
-    chrome.windows.getCurrent({ populate: true }, (currentWindow) => {
+  return new Promise(resolve => {
+    chrome.windows.getCurrent({ populate: true }, currentWindow => {
       const { height, left, top, width } =
-        calculateWindowPosition(currentWindow);
+        calculateWindowPosition(currentWindow)
 
       chrome.windows.create(
         {
           url: chrome.runtime.getURL(`${name}.html`),
-          type: "panel",
+          type: 'panel',
           height,
           left,
           top,
           width,
         },
-        (window) => {
-          resolve(window?.id ?? 0);
-        },
-      );
-    });
-  });
-};
+        window => {
+          resolve(window?.id ?? 0)
+        }
+      )
+    })
+  })
+}
 
-const handleProvider = (chain: ChainKey, update?: boolean) => {
-  const rpc = rpcUrl[chain];
-
-  if (update) {
-    if (rpcProvider) rpcProvider = new JsonRpcProvider(rpc);
-  } else {
-    rpcProvider = new JsonRpcProvider(rpc);
+const handleProvider = (chain: Chain, update?: boolean) => {
+  const rpc = chainRpcUrl[chain]
+  if (!rpc) return
+  if (update && rpcProvider) {
+    rpcProvider = new JsonRpcProvider(rpc)
+    return
   }
-};
+  rpcProvider = new JsonRpcProvider(rpc)
+}
 
 const handleFindAccounts = (
-  chain: ChainKey,
-  sender: string,
+  chain: Chain,
+  sender: string
 ): Promise<string[]> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     getStoredVaults()
-      .then((vaults) => {
+      .then(vaults => {
         resolve(
           vaults.flatMap(({ active, apps, chains }) =>
             active && apps
               ? chains
                   .filter(
                     (selectedChain: ChainProps) =>
-                      selectedChain.name === chain && apps.indexOf(sender) >= 0,
+                      selectedChain.chain === chain && apps.indexOf(sender) >= 0
                   )
-                  .map(({ address }) => address ?? "")
-              : [],
-          ),
-        );
+                  .map(({ address }) => address ?? '')
+              : []
+          )
+        )
       })
-      .catch(() => resolve([]));
-  });
-};
+      .catch(() => resolve([]))
+  })
+}
 
-const handleGetAccounts = (
-  chain: ChainKey,
-  sender: string,
-): Promise<string[]> => {
-  return new Promise((resolve) => {
+const handleFindVault = (
+  sender: string
+): Promise<Messaging.GetVault.Response> => {
+  return new Promise(resolve => {
+    getStoredVaults()
+      .then(vaults => {
+        resolve(
+          vaults.find(
+            ({ active, apps = [] }) => active && apps.indexOf(sender) >= 0
+          )
+        )
+      })
+      .catch(() => resolve(undefined))
+  })
+}
+
+const handleGetAccounts = (chain: Chain, sender: string): Promise<string[]> => {
+  return new Promise(resolve => {
     if (instance[Instance.ACCOUNTS]) {
-      let interval = setInterval(() => {
+      const interval = setInterval(() => {
         if (!instance[Instance.ACCOUNTS]) {
-          clearInterval(interval);
+          clearInterval(interval)
 
-          handleFindAccounts(chain, sender).then(resolve);
+          handleFindAccounts(chain, sender).then(resolve)
         }
-      }, 250);
+      }, 250)
     } else {
-      instance[Instance.ACCOUNTS] = true;
+      instance[Instance.ACCOUNTS] = true
 
-      handleFindAccounts(chain, sender).then((accounts) => {
+      handleFindAccounts(chain, sender).then(accounts => {
         if (accounts.length) {
-          instance[Instance.ACCOUNTS] = false;
+          instance[Instance.ACCOUNTS] = false
 
-          resolve(accounts);
+          resolve(accounts)
         } else {
           setStoredRequest({
             chain,
             sender,
           }).then(() => {
-            handleOpenPanel(Instance.ACCOUNTS).then((createdWindowId) => {
-              chrome.windows.onRemoved.addListener((closedWindowId) => {
+            handleOpenPanel(Instance.ACCOUNTS).then(createdWindowId => {
+              chrome.windows.onRemoved.addListener(closedWindowId => {
                 if (closedWindowId === createdWindowId) {
-                  instance[Instance.ACCOUNTS] = false;
+                  instance[Instance.ACCOUNTS] = false
 
-                  handleFindAccounts(chain, sender).then(resolve);
+                  handleFindAccounts(chain, sender).then(resolve)
                 }
-              });
-            });
-          });
+              })
+            })
+          })
         }
-      });
+      })
     }
-  });
-};
+  })
+}
+
+const handleGetVault = (
+  sender: string
+): Promise<Messaging.GetVault.Response> => {
+  return new Promise(resolve => {
+    if (instance[Instance.VAULT]) {
+      const interval = setInterval(() => {
+        if (!instance[Instance.VAULT]) {
+          clearInterval(interval)
+
+          handleFindVault(sender).then(resolve)
+        }
+      }, 250)
+    } else {
+      instance[Instance.VAULT] = true
+
+      handleFindVault(sender).then(vault => {
+        if (vault) {
+          instance[Instance.VAULT] = false
+
+          resolve(vault)
+        } else {
+          setStoredRequest({
+            chain: Chain.Ethereum,
+            sender,
+          }).then(() => {
+            handleOpenPanel(Instance.VAULT).then(createdWindowId => {
+              chrome.windows.onRemoved.addListener(closedWindowId => {
+                if (closedWindowId === createdWindowId) {
+                  instance[Instance.VAULT] = false
+
+                  handleFindVault(sender).then(resolve)
+                }
+              })
+            })
+          })
+        }
+      })
+    }
+  })
+}
 
 const handleGetVaults = (): Promise<Messaging.GetVaults.Response> => {
-  return new Promise((resolve) => {
-    getStoredVaults().then((vaults) => {
+  return new Promise(resolve => {
+    getStoredVaults().then(vaults => {
       setStoredVaults(
-        vaults.map((vault) => ({ ...vault, selected: false })),
+        vaults.map(vault => ({ ...vault, selected: false }))
       ).then(() => {
-        handleOpenPanel("vaults").then((createdWindowId) => {
-          chrome.windows.onRemoved.addListener((closedWindowId) => {
+        handleOpenPanel('vaults').then(createdWindowId => {
+          chrome.windows.onRemoved.addListener(closedWindowId => {
             if (closedWindowId === createdWindowId) {
-              getStoredVaults().then((vaults) => {
+              getStoredVaults().then(vaults => {
                 resolve(
                   vaults
                     .filter(({ selected }) => selected)
@@ -172,635 +238,763 @@ const handleGetVaults = (): Promise<Messaging.GetVaults.Response> => {
                         publicKeyEddsa,
                         transactions: [],
                         uid,
-                      }),
-                    ),
-                );
-              });
+                      })
+                    )
+                )
+              })
             }
-          });
-        });
-      });
-    });
-  });
-};
+          })
+        })
+      })
+    })
+  })
+}
 
 const handleSendTransaction = (
-  transaction: ITransaction.METAMASK,
-  chain: ChainProps,
-  isDeposit?: boolean,
-): Promise<{ txResponse: string; raw: any }> => {
+  transaction: ITransaction,
+  chain: ChainProps
+): Promise<SendTransactionResponse> => {
   return new Promise((resolve, reject) => {
-    getStoredTransactions().then((transactions) => {
-      const uuid = uuidv4();
+    getStoredTransactions().then(transactions => {
+      const uuid = uuidv4()
 
       setStoredTransactions([
         {
           ...transaction,
-          isDeposit,
           chain,
           id: uuid,
-          status: "default",
+          status: 'default',
         },
         ...transactions,
       ]).then(() => {
-        handleOpenPanel("transaction").then((createdWindowId) => {
-          getStoredTransactions().then((transactions) => {
+        handleOpenPanel('transaction').then(createdWindowId => {
+          getStoredTransactions().then(transactions => {
             setStoredTransactions(
-              transactions.map((transaction) =>
+              transactions.map(transaction =>
                 transaction.id === uuid
                   ? { ...transaction, windowId: createdWindowId }
-                  : transaction,
-              ),
-            );
-          });
+                  : transaction
+              )
+            )
+          })
 
-          chrome.windows.onRemoved.addListener((closedWindowId) => {
+          chrome.windows.onRemoved.addListener(closedWindowId => {
             if (closedWindowId === createdWindowId) {
-              getStoredTransactions().then((transactions) => {
+              getStoredTransactions().then(transactions => {
                 const transaction = transactions.find(
-                  ({ windowId }) => windowId === createdWindowId,
-                );
+                  ({ windowId }) => windowId === createdWindowId
+                )
 
                 if (transaction) {
-                  if (transaction.status === "default") {
-                    getStoredTransactions().then((transactions) => {
+                  if (transaction.status === 'default') {
+                    getStoredTransactions().then(transactions => {
                       setStoredTransactions(
                         transactions.filter(
-                          (transaction) =>
+                          transaction =>
                             transaction.id !== uuid &&
-                            transaction.windowId !== createdWindowId,
-                        ),
-                      ).then(reject);
-                    });
+                            transaction.windowId !== createdWindowId
+                        )
+                      ).then(reject)
+                    })
                   } else {
-                    getStoredVaults().then((vaults) => {
+                    getStoredVaults().then(vaults => {
                       setStoredVaults(
-                        vaults.map((vault) => ({
+                        vaults.map(vault => ({
                           ...vault,
                           transactions: [transaction, ...vault.transactions],
-                        })),
+                        }))
                       ).then(() => {
                         if (transaction.customSignature) {
                           resolve({
                             txResponse: transaction.customSignature,
                             raw: transaction.raw,
-                          });
+                          })
                         } else if (transaction.txHash) {
                           resolve({
                             txResponse: transaction.txHash,
                             raw: transaction.raw,
-                          });
+                          })
                         } else {
-                          reject();
+                          reject()
                         }
-                      });
-                    });
+                      })
+                    })
                   }
                 } else {
-                  reject();
+                  reject()
                 }
-              });
+              })
             }
-          });
-        });
-      });
-    });
-  });
-};
+          })
+        })
+      })
+    })
+  })
+}
 
 const handleRequest = (
   body: Messaging.Chain.Request,
   chain: ChainProps,
-  sender: string,
+  sender: string
 ): Promise<
-  Messaging.Chain.Response | ThorchainProviderResponse<ThorchainProviderMethod>
+  | Messaging.Chain.Response
+  | ThorchainProviderResponse<ThorchainProviderMethod>
+  | SendTransactionResponse
 > => {
   return new Promise((resolve, reject) => {
-    const { method, params } = body;
-    if (evmChains.includes(chain.name)) {
-      if (!rpcProvider) handleProvider(chain.name);
+    const { method, params } = body
+    if (getChainKind(chain.chain) === 'evm') {
+      if (!rpcProvider) handleProvider(chain.chain)
     }
 
     switch (method) {
       case RequestMethod.VULTISIG.GET_ACCOUNTS:
       case RequestMethod.METAMASK.ETH_ACCOUNTS: {
-        handleFindAccounts(chain.name, sender)
+        handleFindAccounts(chain.chain, sender)
           .then(([account]) => {
-            switch (chain.name) {
-              case ChainKey.DYDX:
-              case ChainKey.GAIACHAIN:
-              case ChainKey.KUJIRA:
-              case ChainKey.OSMOSIS: {
-                resolve(account);
+            switch (chain.chain) {
+              case Chain.Dydx:
+              case Chain.Cosmos:
+              case Chain.Kujira:
+              case Chain.Osmosis: {
+                resolve(account)
 
-                break;
+                break
               }
               default: {
-                resolve([account]);
+                resolve([account])
 
-                break;
+                break
               }
             }
           })
-          .catch(reject);
+          .catch(reject)
 
-        break;
+        break
       }
       case RequestMethod.VULTISIG.REQUEST_ACCOUNTS:
       case RequestMethod.METAMASK.ETH_REQUEST_ACCOUNTS: {
-        handleGetAccounts(chain.name, sender)
+        handleGetAccounts(chain.chain, sender)
           .then(([account]) => {
-            switch (chain.name) {
-              case ChainKey.DYDX:
-              case ChainKey.GAIACHAIN:
-              case ChainKey.KUJIRA:
-              case ChainKey.OSMOSIS:
-              case ChainKey.SOLANA: {
-                resolve(account);
+            switch (chain.chain) {
+              case Chain.Dydx:
+              case Chain.Cosmos:
+              case Chain.Kujira:
+              case Chain.Osmosis:
+              case Chain.Solana: {
+                resolve(account)
 
-                break;
+                break
               }
               default: {
-                resolve([account]);
+                resolve([account])
 
-                break;
+                break
               }
             }
           })
-          .catch(reject);
+          .catch(reject)
 
-        break;
+        break
       }
       case RequestMethod.VULTISIG.CHAIN_ID:
       case RequestMethod.METAMASK.ETH_CHAIN_ID: {
-        handleProvider(chain.name, true);
+        handleProvider(chain.chain, true)
 
-        resolve(chain.id);
+        resolve(getChainId(chain.chain))
 
-        break;
+        break
       }
-      case RequestMethod.VULTISIG.SEND_TRANSACTION:
+      case RequestMethod.VULTISIG.SEND_TRANSACTION: {
+        const [_transaction] = params
+        const isBasic = isBasicTransaction(_transaction)
+
+        getStandardTransactionDetails(
+          {
+            ..._transaction,
+            txType: isBasic ? 'MetaMask' : (_transaction.txType ?? 'Vultisig'),
+          } as TransactionType.WalletTransaction,
+          chain
+        ).then(standardTx => {
+          const modifiedTransaction: ITransaction = {
+            transactionDetails: standardTx as TransactionDetails,
+            chain,
+            id: '',
+            status: 'default',
+          }
+          handleSendTransaction(modifiedTransaction, chain)
+            .then(result => resolve(result))
+            .catch(reject)
+        })
+
+        break
+      }
       case RequestMethod.METAMASK.ETH_SEND_TRANSACTION: {
         if (Array.isArray(params)) {
-          const [transaction] = params as ITransaction.METAMASK[];
+          const [_transaction] = params as TransactionType.MetaMask[]
 
-          if (transaction) {
-            handleSendTransaction(transaction, chain)
-              .then((result) => resolve(result.txResponse))
-              .catch(reject);
+          if (_transaction) {
+            getStandardTransactionDetails(
+              {
+                ..._transaction,
+                txType: 'MetaMask',
+              } as TransactionType.MetaMask,
+              chain
+            ).then(standardTx => {
+              const modifiedTransaction: ITransaction = {
+                transactionDetails: standardTx!,
+                chain,
+                id: '',
+                status: 'default',
+              }
+              handleSendTransaction(modifiedTransaction, chain)
+                .then(result => resolve(result))
+                .catch(reject)
+            })
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.VULTISIG.DEPOSIT_TRANSACTION: {
         if (Array.isArray(params)) {
-          const [transaction] = params as ITransaction.METAMASK[];
-
+          const [transaction] = params as TransactionType.Vultisig[]
           if (transaction) {
-            handleSendTransaction(transaction, chain, true)
-              .then((result) =>
-                chain.name === ChainKey.SOLANA
-                  ? resolve([result.txResponse, result.raw])
-                  : resolve(result.txResponse),
-              )
-              .catch(reject);
+            const isBasic = isBasicTransaction(transaction)
+
+            getStandardTransactionDetails(
+              {
+                ...transaction,
+                txType: isBasic
+                  ? 'MetaMask'
+                  : (transaction.txType ?? 'Vultisig'),
+              } as TransactionType.WalletTransaction,
+              chain
+            ).then(standardTx => {
+              let modifiedTransaction: ITransaction = {} as ITransaction
+              modifiedTransaction = {
+                transactionDetails: standardTx as TransactionDetails,
+                isDeposit: true,
+                chain,
+                id: '',
+                status: 'default',
+              }
+              handleSendTransaction(modifiedTransaction, chain)
+                .then(result => resolve(result))
+                .catch(reject)
+            })
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
-      case RequestMethod.VULTISIG.GET_TRANSACTION_BY_HASH: 
+      case RequestMethod.VULTISIG.GET_TRANSACTION_BY_HASH:
       case RequestMethod.METAMASK.ETH_GET_TRANSACTION_BY_HASH: {
         if (Array.isArray(params)) {
-          const [hash] = params;
+          const [hash] = params
 
           if (hash) {
-            switch (chain.name) {
+            switch (chain.chain) {
               // Thor
-              case ChainKey.THORCHAIN: {
+              case Chain.THORChain: {
                 api.thorchain
                   .getTransactionByHash(String(hash))
                   .then(resolve)
-                  .catch(reject);
+                  .catch(reject)
 
-                break;
+                break
               }
               // Cosmos
-              case ChainKey.DYDX:
-              case ChainKey.GAIACHAIN:
-              case ChainKey.KUJIRA:
-              case ChainKey.MAYACHAIN:
-              case ChainKey.OSMOSIS: {
-                Tendermint34Client.connect(rpcUrl[chain.name])
-                  .then((client) => {
+              case Chain.Dydx:
+              case Chain.Cosmos:
+              case Chain.Kujira:
+              case Chain.MayaChain:
+              case Chain.Osmosis: {
+                getCosmosClient(chain.chain)
+                  .then(client => {
                     client
-                      .tx({ hash: Buffer.from(String(hash)) })
-                      .then(({ result }) => resolve(JSON.stringify(result)))
-                      .catch(reject);
+                      .getTx(String(hash))
+                      .then(result => resolve(JSON.stringify(result)))
                   })
-                  .catch((error) =>
-                    reject(`Could not initialize Tendermint Client: ${error}`),
-                  );
+                  .catch(error =>
+                    reject(`Could not initialize Tendermint Client: ${error}`)
+                  )
 
-                break;
+                break
               }
               // EVM
-              case ChainKey.AVALANCHE:
-              case ChainKey.ARBITRUM:
-              case ChainKey.BASE:
-              case ChainKey.BSCCHAIN:
-              case ChainKey.CRONOSCHAIN:
-              case ChainKey.ETHEREUM:
-              case ChainKey.OPTIMISM:
-              case ChainKey.POLYGON: {
-                api.ethereum
-                  .getTransactionByHash(rpcUrl[chain.name], String(hash))
-                  .then(resolve)
-                  .catch(reject);
+              case Chain.Avalanche:
+              case Chain.Arbitrum:
+              case Chain.Base:
+              case Chain.BSC:
+              case Chain.CronosChain:
+              case Chain.Ethereum:
+              case Chain.Optimism:
+              case Chain.Polygon: {
+                const client = getEvmClient(chain.chain)
+                client
+                  .getTransaction({ hash: String(hash) as `0x${string}` })
+                  .then(result => {
+                    resolve(JSON.stringify(result))
+                  })
 
-                break;
+                break
               }
               default: {
                 api.utxo
-                  .blockchairGetTx(chain.name, String(hash))
-                  .then((res) => resolve(JSON.stringify(res)))
-                  .catch(reject);
+                  .blockchairGetTx(chain.chain, String(hash))
+                  .then(res => resolve(JSON.stringify(res)))
+                  .catch(reject)
 
-                break;
+                break
               }
             }
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_GET_TRANSACTION_COUNT: {
-        const [address, tag] = params;
+        const [address, tag] = params
         rpcProvider
           .getTransactionCount(String(address), String(tag))
-          .then((count) => resolve(String(count)));
-        break;
+          .then(count => resolve(String(count)))
+        break
       }
       case RequestMethod.METAMASK.ETH_BLOCK_NUMBER: {
         rpcProvider
-          .getBlock("latest")
-          .then((block) => resolve(String(block?.number)))
-          .catch(reject);
+          .getBlock('latest')
+          .then(block => resolve(String(block?.number)))
+          .catch(reject)
 
-        break;
+        break
       }
       case RequestMethod.VULTISIG.WALLET_ADD_CHAIN:
       case RequestMethod.METAMASK.WALLET_ADD_ETHEREUM_CHAIN: {
         if (Array.isArray(params)) {
-          const [param] = params;
+          const [param] = params
 
           if (param?.chainId) {
-            const supportedChain = findChainByProp(chains, "id", param.chainId);
-
+            const chainFromId = getChainByChainId(param.chainId)
+            const supportedChain = isSupportedChain(chainFromId)
+              ? chainFromId
+              : null
             if (supportedChain) {
-              getStoredChains().then((storedChains) => {
+              getStoredChains().then(storedChains => {
                 setStoredChains([
-                  { ...supportedChain, active: true },
+                  { ...chainFeeCoin[supportedChain], active: true },
                   ...storedChains
                     .filter(
                       (storedChain: ChainProps) =>
-                        storedChain.name !== supportedChain.name,
+                        storedChain.chain !== supportedChain
                     )
-                    .map((chain) => ({ ...chain, active: false })),
+                    .map(chain => ({ ...chain, active: false })),
                 ])
-                  .then(() => resolve(supportedChain.id))
-                  .catch(reject);
-              });
+                  .then(() => resolve(param.chainId))
+                  .catch(reject)
+              })
             } else {
-              reject();
+              reject()
             }
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.WALLET_GET_PERMISSIONS: {
-        resolve([]);
+        resolve([])
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.WALLET_REQUEST_PERMISSIONS: {
-        resolve([]);
+        resolve([])
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.WALLET_REVOKE_PERMISSIONS: {
-        getStoredVaults().then((vaults) => {
+        getStoredVaults().then(vaults => {
           setStoredVaults(
-            vaults.map((vault) => ({
+            vaults.map(vault => ({
               ...vault,
-              apps: vault.apps?.filter((app) => app !== sender),
-            })),
-          ).then(() => resolve(""));
-        });
+              apps: vault.apps?.filter(app => app !== sender),
+            }))
+          ).then(() => resolve(''))
+        })
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_ESTIMATE_GAS: {
         if (Array.isArray(params)) {
-          const [transaction] = params as TransactionRequest[];
+          const [transaction] = params as TransactionRequest[]
 
           if (transaction) {
             rpcProvider
               .estimateGas(transaction)
-              .then((gas) => resolve(gas.toString()))
-              .catch(reject);
+              .then(gas => resolve(gas.toString()))
+              .catch(reject)
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.VULTISIG.WALLET_SWITCH_CHAIN:
       case RequestMethod.METAMASK.WALLET_SWITCH_ETHEREUM_CHAIN: {
         if (Array.isArray(params)) {
-          const [param] = params;
+          const [param] = params
 
           if (param?.chainId) {
-            const supportedChain = findChainByProp(chains, "id", param.chainId);
-
+            const supportedChain = isSupportedChain(
+              getChainByChainId(param.chainId)
+            )
+              ? getChainByChainId(param.chainId)
+              : null
             if (supportedChain) {
-              getStoredChains().then((storedChains) => {
+              getStoredChains().then(storedChains => {
                 const existed =
-                  storedChains.findIndex(({ id }) => id === param.chainId) >= 0;
+                  storedChains.findIndex(
+                    ({ chain }) => chain === supportedChain
+                  ) >= 0
 
                 if (existed) {
                   setStoredChains(
-                    storedChains.map((chain) => ({
+                    storedChains.map(chain => ({
                       ...chain,
-                      active: chain.id === param.chainId,
-                    })),
+                      active: chain.chain === supportedChain,
+                    }))
                   )
                     .then(() => resolve(param.chainId))
-                    .catch(reject);
+                    .catch(reject)
                 } else {
                   handleRequest(
                     { method: RequestMethod.VULTISIG.WALLET_ADD_CHAIN, params },
                     chain,
-                    sender,
+                    sender
                   )
                     .then(resolve)
-                    .catch(reject);
+                    .catch(reject)
                 }
-              });
+              })
             } else {
-              reject("Chain not Supported");
+              reject(`Chain ${param?.chainId} not supported`)
             }
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_GET_BALANCE: {
         if (Array.isArray(params)) {
-          const [address, tag] = params;
+          const [address, tag] = params
 
           if (address && tag) {
             rpcProvider
               .getBalance(String(address), String(tag))
-              .then((value) => resolve(value.toString()))
-              .catch(reject);
+              .then(value => resolve(value.toString()))
+              .catch(reject)
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_GET_BLOCK_BY_NUMBER: {
-        const [tag, refresh] = params;
+        const [tag, refresh] = params
         rpcProvider
           .getBlock(String(tag), Boolean(refresh))
-          .then((block) => resolve(block?.toJSON()))
-          .catch(reject);
+          .then(block => resolve(block?.toJSON()))
+          .catch(reject)
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_GAS_PRICE: {
         rpcProvider
           .getFeeData()
           .then(({ gasPrice }) => resolve(gasPrice!.toString()))
-          .catch(reject);
+          .catch(reject)
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_MAX_PRIORITY_FEE_PER_GAS: {
         rpcProvider
           .getFeeData()
-          .then(({ maxFeePerGas }) => resolve(maxFeePerGas!.toString()));
+          .then(({ maxFeePerGas }) => resolve(maxFeePerGas!.toString()))
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_CALL: {
         if (Array.isArray(params)) {
-          const [transaction] = params as ITransaction.METAMASK[];
+          const [transaction] = params as ITransaction[]
 
-          transaction ? resolve(rpcProvider.call(transaction)) : reject();
+          if (transaction) {
+            rpcProvider.call(transaction).then(resolve).catch(reject)
+          } else {
+            reject(new Error('Invalid transaction'))
+          }
         } else {
-          reject();
+          reject(new Error('Invalid params'))
         }
 
-        break;
+        break
       }
+
       case RequestMethod.METAMASK.ETH_GET_TRANSACTION_RECEIPT: {
         if (Array.isArray(params)) {
-          const [transaction] = params as ITransaction.METAMASK[];
+          const [transaction] = params as ITransaction[]
 
           rpcProvider
             .getTransactionReceipt(String(transaction))
-            .then((receipt) => resolve(receipt?.toJSON()))
-            .catch(reject);
+            .then(receipt => resolve(receipt?.toJSON()))
+            .catch(reject)
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.ETH_GET_CODE: {
         if (Array.isArray(params)) {
-          const [address, tag] = params;
+          const [address, tag] = params
 
           if (address && tag) {
             rpcProvider
               .getCode(String(address), String(tag))
-              .then((value) => resolve(value.toString()))
-              .catch(reject);
+              .then(value => resolve(value.toString()))
+              .catch(reject)
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
+      case RequestMethod.METAMASK.ETH_SIGN_TYPED_DATA_V4: {
+        if (Array.isArray(params)) {
+          try {
+            const [address, msgParamsString] = params
+            const msgParams = JSON.parse(String(msgParamsString))
+            const { domain, types, message } = msgParams
+            // "EIP712Domain" is removed (ethers handles it separately)
+            if (types['EIP712Domain']) {
+              delete types['EIP712Domain']
+            }
+
+            const hashMessage = TypedDataEncoder.encode(domain, types, message)
+            handleSendTransaction(
+              {
+                customMessage: {
+                  method,
+                  address: String(address),
+                  message: hashMessage,
+                },
+                isCustomMessage: true,
+                chain: chain,
+                transactionDetails: {
+                  amount: { amount: '0', decimals: 0 },
+                  from: String(address),
+                  to: '',
+                  asset: {
+                    chain: Chain.Ethereum,
+                    ticker: 'ETH',
+                  },
+                },
+                id: '',
+                status: 'default',
+                isDeposit: false,
+              },
+              chain
+            )
+              .then(result => resolve(result))
+              .catch(error => {
+                reject(error)
+              })
+          } catch (error) {
+            reject(error)
+          }
+        } else {
+          reject(new Error('Invalid parameters'))
+        }
+        break
+      }
+
       case RequestMethod.METAMASK.PERSONAL_SIGN: {
         if (Array.isArray(params)) {
-          const [message, address] = params;
-          const utf8Message = toUtf8String(String(message));
+          const [message, address] = params
+          const utf8Message = toUtf8String(String(message))
           handleSendTransaction(
             {
               customMessage: {
+                method,
                 address: String(address),
                 message: `\x19Ethereum Signed Message:\n${utf8Message.length}${utf8Message}`,
               },
               isCustomMessage: true,
               chain: chain,
-              data: "",
-              from: String(address),
-              id: "",
-              status: "default",
-              to: "",
+              transactionDetails: {
+                amount: { amount: '0', decimals: 0 },
+                from: String(address),
+                to: '',
+                asset: {
+                  chain: Chain.Ethereum,
+                  ticker: 'ETH',
+                },
+              },
+              id: '',
+              status: 'default',
               isDeposit: false,
             },
-            chain,
+            chain
           )
-            .then((result) => resolve(result.txResponse))
-            .catch(reject);
+            .then(result => resolve(result))
+            .catch(reject)
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.METAMASK.NET_VERSION: {
-        resolve(String(parseInt(chain.id, 16)));
-        break;
+        resolve(String(parseInt(getChainId(chain.chain), 16)))
+        break
       }
       case RequestMethod.CTRL.DEPOSIT: {
         if (Array.isArray(params)) {
-          const [_transaction] = params as ITransaction.CTRL[];
+          const [_transaction] = params as TransactionType.Ctrl[]
 
           if (_transaction) {
-            const transaction = {
-              data: _transaction.memo,
-              from: _transaction.from,
-              gasLimit: _transaction.gasLimit,
-              to: _transaction.recipient,
-              value: _transaction.amount.amount.toString(),
-            } as ITransaction.METAMASK;
-
-            handleSendTransaction(transaction, chain, true)
-              .then((result) => resolve(result.txResponse))
-              .catch(reject);
+            getStandardTransactionDetails(
+              { ..._transaction, txType: 'Ctrl' },
+              chain
+            ).then(standardTx => {
+              const tx: ITransaction = {
+                transactionDetails: standardTx,
+                isDeposit: true,
+                chain: chain,
+                id: '',
+                status: 'default',
+              }
+              handleSendTransaction(tx, chain)
+                .then(result => resolve(result))
+                .catch(reject)
+            })
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       case RequestMethod.CTRL.TRANSFER: {
         if (Array.isArray(params)) {
-          const [_transaction] = params as ITransaction.CTRL[];
+          const [_transaction] = params as TransactionType.Ctrl[]
 
           if (_transaction) {
-            const transaction = {
-              data: _transaction.memo,
-              from: _transaction.from,
-              gasLimit: _transaction.gasLimit,
-              to: _transaction.recipient,
-              value: _transaction.amount.amount.toString(),
-            } as ITransaction.METAMASK;
-
-            handleSendTransaction(transaction, chain)
-              .then((result) => resolve(result.txResponse))
-              .catch(reject);
+            getStandardTransactionDetails(
+              { ..._transaction, txType: 'Ctrl' },
+              chain
+            ).then(standardTx => {
+              const tx: ITransaction = {
+                transactionDetails: standardTx,
+                chain: chain,
+                id: '',
+                status: 'default',
+              }
+              handleSendTransaction(tx, chain)
+                .then(result => resolve(result))
+                .catch(reject)
+            })
           } else {
-            reject();
+            reject()
           }
         } else {
-          reject();
+          reject()
         }
 
-        break;
+        break
       }
       default: {
-        reject(`Unsupported method: ${method}`);
+        reject(`Unsupported method: ${method}`)
 
-        break;
+        break
       }
     }
-  });
-};
+  })
+}
 
 const handleSetPriority = (body: Messaging.SetPriority.Request) => {
-  return new Promise(async (resolve) => {
+  return new Promise(resolve => {
     if (body.priority) {
-      setIsPriority(body.priority);
-      resolve(body.priority);
+      setIsPriority(body.priority)
+      resolve(body.priority)
     } else {
-      resolve(await getIsPriority());
+      getIsPriority().then(resolve)
     }
-  });
-};
+  })
+}
 
 chrome.runtime.onMessage.addListener(
   (
     { message, type }: { message: any; type: MessageKey },
     sender,
-    sendResponse,
+    sendResponse
   ) => {
-    const { origin = "" } = sender;
+    const { origin = '' } = sender
 
     switch (type) {
       case MessageKey.BITCOIN_REQUEST: {
-        handleRequest(message, chains[ChainKey.BITCOIN], origin)
+        handleRequest(message, chainFeeCoin.Bitcoin, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.BITCOIN_CASH_REQUEST: {
-        handleRequest(message, chains[ChainKey.BITCOINCASH], origin)
+        handleRequest(message, chainFeeCoin['Bitcoin-Cash'], origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.COSMOS_REQUEST: {
-        getStoredChains().then((storedChains) => {
+        getStoredChains().then(storedChains => {
           const chain = storedChains.find(
             (storedChain: ChainProps) =>
-              storedChain.active && cosmosChains.includes(storedChain.name),
-          );
+              storedChain.active && getChainKind(storedChain.chain) === 'cosmos'
+          )
 
           if (chain) {
             handleRequest(message, chain, origin)
-              .then((response) => {
+              .then(response => {
                 if (
                   message.method === RequestMethod.VULTISIG.REQUEST_ACCOUNTS
                 ) {
@@ -810,56 +1004,56 @@ chrome.runtime.onMessage.addListener(
                         return (
                           vault.chains.find(
                             (selectedChain: ChainProps) =>
-                              selectedChain.name === chain.name,
+                              selectedChain.chain === chain.chain
                           )?.address === response
-                        );
-                      });
+                        )
+                      })
 
                       const storedChain = vault!.chains.find(
                         (selectedChain: ChainProps) =>
-                          selectedChain.name === chain.name,
-                      )!;
-                      const derivationKey = storedChain.derivationKey;
+                          selectedChain.chain === chain.chain
+                      )!
+                      const derivationKey = storedChain.derivationKey
                       if (!derivationKey) {
-                        throw new Error("Derivation key is missing!");
+                        throw new Error('Derivation key is missing!')
                       }
 
                       const keyBytes = Uint8Array.from(
-                        Buffer.from(derivationKey, "hex"),
-                      );
+                        Buffer.from(derivationKey, 'hex')
+                      )
 
                       const account = [
                         {
                           pubkey: Array.from(keyBytes),
                           address: response,
-                          algo: "secp256k1",
+                          algo: 'secp256k1',
                           bech32Address: response,
                           isKeystone: false,
                           isNanoLedger: false,
                         },
-                      ];
-                      sendResponse(account);
-                    });
+                      ]
+                      sendResponse(account)
+                    })
                   } catch (e) {
-                    console.error(e);
+                    console.error(e)
                   }
                 } else {
-                  sendResponse(response);
+                  sendResponse(response)
                 }
               })
-              .catch((error) => sendResponse({ error }));
+              .catch(error => sendResponse({ error }))
           } else {
             handleRequest(
               {
                 method: RequestMethod.VULTISIG.WALLET_ADD_CHAIN,
-                params: [{ chainId: chains[ChainKey.GAIACHAIN].id }],
+                params: [{ chainId: getChainId(Chain.Cosmos) }],
               },
-              chains[ChainKey.GAIACHAIN],
-              origin,
+              chainFeeCoin.Cosmos,
+              origin
             )
               .then(() =>
-                handleRequest(message, chains[ChainKey.GAIACHAIN], origin)
-                  .then((response) => {
+                handleRequest(message, chainFeeCoin.Cosmos, origin)
+                  .then(response => {
                     if (
                       message.method === RequestMethod.VULTISIG.REQUEST_ACCOUNTS
                     ) {
@@ -868,137 +1062,142 @@ chrome.runtime.onMessage.addListener(
                           return (
                             vault.chains.find(
                               (selectedChain: ChainProps) =>
-                                selectedChain.name === ChainKey.GAIACHAIN,
+                                selectedChain.chain === Chain.Cosmos
                             )?.address === response
-                          );
-                        });
+                          )
+                        })
                         const storedChain = vault!.chains.find(
                           (storedChain: ChainProps) =>
-                            storedChain.name === ChainKey.GAIACHAIN,
-                        )!;
-                        const derivationKey = storedChain.derivationKey;
+                            storedChain.chain === Chain.Cosmos
+                        )!
+                        const derivationKey = storedChain.derivationKey
                         if (!derivationKey) {
-                          throw new Error("Derivation key is missing!");
+                          throw new Error('Derivation key is missing!')
                         }
                         try {
                           const keyBytes = Uint8Array.from(
-                            Buffer.from(derivationKey, "hex"),
-                          );
+                            Buffer.from(derivationKey, 'hex')
+                          )
 
                           const account = [
                             {
                               address: response,
-                              algo: "secp256k1",
+                              algo: 'secp256k1',
                               pubkey: Array.from(keyBytes),
                             },
-                          ];
+                          ]
 
-                          sendResponse(account);
+                          sendResponse(account)
                         } catch (e) {
-                          console.error(e);
+                          console.error(e)
                         }
-                      });
+                      })
                     } else {
-                      sendResponse(response);
+                      sendResponse(response)
                     }
                   })
 
-                  .catch((error) => sendResponse({ error })),
+                  .catch(error => sendResponse({ error }))
               )
-              .catch((error) => sendResponse({ error }));
+              .catch(error => sendResponse({ error }))
           }
-        });
+        })
 
-        break;
+        break
       }
       case MessageKey.DASH_REQUEST: {
-        handleRequest(message, chains[ChainKey.DASH], origin)
+        handleRequest(message, chainFeeCoin.Dash, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.DOGECOIN_REQUEST: {
-        handleRequest(message, chains[ChainKey.DOGECOIN], origin)
+        handleRequest(message, chainFeeCoin.Dogecoin, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.ETHEREUM_REQUEST: {
-        getStoredChains().then((storedChains) => {
+        getStoredChains().then(storedChains => {
           const chain = storedChains.find(
             (storedChain: ChainProps) =>
-              storedChain.active && evmChains.indexOf(storedChain.name) >= 0,
-          );
+              storedChain.active && getChainKind(storedChain.chain) === 'evm'
+          )
 
           if (chain) {
             handleRequest(message, chain, origin)
               .then(sendResponse)
-              .catch((error) => sendResponse({ error }));
+              .catch(error => sendResponse({ error }))
           } else {
             handleRequest(
               {
                 method: RequestMethod.METAMASK.WALLET_SWITCH_ETHEREUM_CHAIN,
-                params: [{ chainId: chains[ChainKey.ETHEREUM].id }],
+                params: [{ chainId: getChainId(Chain.Ethereum) }],
               },
-              chains[ChainKey.ETHEREUM],
-              origin,
+              chainFeeCoin.Ethereum,
+              origin
             )
               .then(() =>
-                handleRequest(message, chains[ChainKey.ETHEREUM], origin)
+                handleRequest(message, chainFeeCoin.Ethereum, origin)
                   .then(sendResponse)
-                  .catch((error) => sendResponse({ error })),
+                  .catch(error => sendResponse({ error }))
               )
-              .catch((error) => sendResponse({ error }));
+              .catch(error => sendResponse({ error }))
           }
-        });
+        })
 
-        break;
+        break
       }
       case MessageKey.LITECOIN_REQUEST: {
-        handleRequest(message, chains[ChainKey.LITECOIN], origin)
+        handleRequest(message, chainFeeCoin.Litecoin, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.MAYA_REQUEST: {
-        handleRequest(message, chains[ChainKey.MAYACHAIN], origin)
+        handleRequest(message, chainFeeCoin.MayaChain, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.SOLANA_REQUEST: {
-        handleRequest(message, chains[ChainKey.SOLANA], origin)
+        handleRequest(message, chainFeeCoin.Solana, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.THOR_REQUEST: {
-        handleRequest(message, chains[ChainKey.THORCHAIN], origin)
+        handleRequest(message, chainFeeCoin.THORChain, origin)
           .then(sendResponse)
-          .catch((error) => sendResponse({ error }));
+          .catch(error => sendResponse({ error }))
 
-        break;
+        break
       }
       case MessageKey.PRIORITY: {
-        handleSetPriority(message).then(sendResponse);
+        handleSetPriority(message).then(sendResponse)
 
-        break;
+        break
+      }
+      case MessageKey.VAULT: {
+        handleGetVault(origin).then(sendResponse)
+
+        break
       }
       case MessageKey.VAULTS: {
-        handleGetVaults().then(sendResponse);
+        handleGetVaults().then(sendResponse)
 
-        break;
+        break
       }
       default: {
-        break;
+        break
       }
     }
 
-    return true;
-  },
-);
+    return true
+  }
+)

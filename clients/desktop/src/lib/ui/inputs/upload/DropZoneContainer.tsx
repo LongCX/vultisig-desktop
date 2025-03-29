@@ -1,9 +1,9 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
-import { borderRadius } from '../../css/borderRadius';
-import { centerContent } from '../../css/centerContent';
-import { interactive } from '../../css/interactive';
-import { getColor } from '../../theme/getters';
+import { borderRadius } from '../../css/borderRadius'
+import { centerContent } from '../../css/centerContent'
+import { interactive } from '../../css/interactive'
+import { getColor } from '../../theme/getters'
 
 export const DropZoneContainer = styled.div`
   flex: 1;
@@ -13,16 +13,15 @@ export const DropZoneContainer = styled.div`
   ${centerContent};
   ${borderRadius.m};
   padding: 20px;
-  border: 1px dashed ${getColor('primary')};
-  background: ${({ theme }) =>
-    theme.colors.primary.getVariant({ a: () => 0.14 }).toCssValue()};
-`;
+  border: 1px dashed ${getColor('foregroundSuper')};
+  background: ${getColor('foreground')};
+`
 
 export const InteractiveDropZoneContainer = styled(DropZoneContainer)`
   ${interactive};
 
   &:hover {
     background: ${({ theme }) =>
-      theme.colors.primary.getVariant({ a: () => 0.2 }).toCssValue()};
+      theme.colors.foreground.getVariant({ a: () => 0.6 }).toCssValue()};
   }
-`;
+`

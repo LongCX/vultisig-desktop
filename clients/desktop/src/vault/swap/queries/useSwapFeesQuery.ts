@@ -1,24 +1,23 @@
-import { matchRecordUnion } from '@lib/utils/matchRecordUnion';
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
+import { getFeeAmount } from '@core/chain/tx/fee/getFeeAmount'
+import { useTransformQueriesData } from '@lib/ui/query/hooks/useTransformQueriesData'
+import { matchRecordUnion } from '@lib/utils/matchRecordUnion'
 
-import { NativeSwapEnabledChain } from '../../../chain/swap/native/NativeSwapChain';
-import { getNativeSwapDecimals } from '../../../chain/swap/native/utils/getNativeSwapDecimals';
-import { getFeeAmount } from '../../../chain/tx/fee/utils/getFeeAmount';
-import { chainFeeCoin } from '../../../coin/chainFeeCoin';
-import { getCoinMetaKey } from '../../../coin/utils/coinMeta';
-import { useTransformQueriesData } from '../../../lib/ui/query/hooks/useTransformQueriesData';
-import { useFromCoin } from '../state/fromCoin';
-import { useToCoin } from '../state/toCoin';
-import { SwapFees } from '../types/SwapFee';
-import { useSwapChainSpecificQuery } from './useSwapChainSpecificQuery';
-import { useSwapQuoteQuery } from './useSwapQuoteQuery';
+import { useCurrentVaultCoin } from '../../state/currentVault'
+import { useFromCoin } from '../state/fromCoin'
+import { useToCoin } from '../state/toCoin'
+import { SwapFees } from '../types/SwapFee'
+import { useSwapChainSpecificQuery } from './useSwapChainSpecificQuery'
+import { useSwapQuoteQuery } from './useSwapQuoteQuery'
 
 export const useSwapFeesQuery = () => {
-  const swapQuoteQuery = useSwapQuoteQuery();
+  const swapQuoteQuery = useSwapQuoteQuery()
 
-  const [fromCoinKey] = useFromCoin();
-  const [toCoinKey] = useToCoin();
+  const [fromCoinKey] = useFromCoin()
+  const [toCoinKey] = useToCoin()
+  const toCoin = useCurrentVaultCoin(toCoinKey)
 
-  const chainSpecificQuery = useSwapChainSpecificQuery();
+  const chainSpecificQuery = useSwapChainSpecificQuery()
 
   return useTransformQueriesData(
     {
@@ -26,40 +25,49 @@ export const useSwapFeesQuery = () => {
       chainSpecific: chainSpecificQuery,
     },
     ({ swapQuote, chainSpecific }): SwapFees => {
-      const fromFeeCoin = chainFeeCoin[fromCoinKey.chain];
+      const fromFeeCoin = chainFeeCoin[fromCoinKey.chain]
 
       return matchRecordUnion(swapQuote, {
         native: ({ fees }) => {
-          const decimals = getNativeSwapDecimals(
-            fromCoinKey.chain as NativeSwapEnabledChain
-          );
+          const feeAmount = getFeeAmount(chainSpecific)
 
-          const feeAmount = getFeeAmount(chainSpecific);
-
-          return {
+          const result: SwapFees = {
             swap: {
               ...toCoinKey,
               amount: BigInt(fees.total),
-              decimals,
+              decimals: toCoin.decimals,
             },
             network: {
-              ...getCoinMetaKey(fromFeeCoin),
+              ...fromFeeCoin,
               amount: feeAmount,
               decimals: fromFeeCoin.decimals,
-              chainSpecific,
             },
-          };
+          }
+
+          return result
         },
-        general: ({ tx: { gasPrice, gas } }) => {
-          return {
-            swap: {
-              ...getCoinMetaKey(fromFeeCoin),
-              amount: BigInt(gasPrice) * BigInt(gas),
-              decimals: fromFeeCoin.decimals,
-            },
-          };
+        general: ({ tx }) => {
+          return matchRecordUnion(tx, {
+            evm: ({ gasPrice, gas }) => ({
+              swap: {
+                chain: fromCoinKey.chain,
+                id: fromCoinKey.id,
+                amount: BigInt(gasPrice) * BigInt(gas),
+                decimals: fromFeeCoin.decimals,
+              },
+            }),
+            solana: ({ networkFee, swapFee }) => ({
+              network: {
+                chain: fromCoinKey.chain,
+                id: fromCoinKey.id,
+                amount: BigInt(networkFee),
+                decimals: fromFeeCoin.decimals,
+              },
+              swap: swapFee,
+            }),
+          })
         },
-      });
+      })
     }
-  );
-};
+  )
+}

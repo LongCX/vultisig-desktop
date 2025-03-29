@@ -1,20 +1,19 @@
-import isPropValid from '@emotion/is-prop-valid';
-import { StyleSheetManager } from 'styled-components';
-import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-components';
-import { DefaultTheme } from 'styled-components';
-
-import { ChildrenProp } from '../props';
+import isPropValid from '@emotion/is-prop-valid'
+import { ChildrenProp } from '@lib/ui/props'
+import { StyleSheetManager } from 'styled-components'
+import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-components'
+import { DefaultTheme } from 'styled-components'
 
 const shouldForwardProp = (propName: string, target: any) => {
   if (typeof target === 'string') {
-    return isPropValid(propName);
+    return isPropValid(propName)
   }
-  return true;
-};
+  return true
+}
 
 type ThemeProviderProps = ChildrenProp & {
-  theme: DefaultTheme;
-};
+  theme: DefaultTheme
+}
 
 export const ThemeProvider = ({ children, theme }: ThemeProviderProps) => {
   return (
@@ -23,5 +22,5 @@ export const ThemeProvider = ({ children, theme }: ThemeProviderProps) => {
         {children}
       </StyledComponentsThemeProvider>
     </StyleSheetManager>
-  );
-};
+  )
+}

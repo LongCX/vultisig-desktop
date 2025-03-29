@@ -1,13 +1,21 @@
-import { storage } from '../../../wailsjs/go/models';
-import { VaultContainer } from '@core/communication/vultisig/vault/v1/vault_container_pb';
+import { VaultContainer } from '@core/mpc/types/vultisig/vault/v1/vault_container_pb'
+
+import { storage } from '../../../wailsjs/go/models'
 
 export type VaultBackupResult =
   | {
-      vaultContainer: VaultContainer;
+      vaultContainer: VaultContainer
     }
   | {
-      vault: storage.Vault;
+      vault: storage.Vault
     }
   | {
-      encryptedVault: ArrayBuffer;
-    };
+      encryptedVault: ArrayBuffer
+    }
+
+export type VaultBackupOverride = Pick<storage.Vault, 'lib_type'>
+
+export type FileBasedVaultBackupResult = {
+  result: VaultBackupResult
+  override?: VaultBackupOverride
+}

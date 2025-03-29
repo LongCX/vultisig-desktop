@@ -1,51 +1,55 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
-import { getStoredVaults, setStoredVaults } from "../../../../utils/storage";
-import type { VaultProps } from "../../../../utils/interfaces";
-import useGoBack from "../../../../hooks/go-back";
-import messageKeys from "../../../../utils/message-keys";
-import routeKeys from "../../../../utils/route-keys";
-
-import { ArrowLeft, ArrowRight } from "../../../../icons";
-import { Button } from "antd";
+import useGoBack from '@clients/extension/src/hooks/go-back'
+import { ArrowLeft, ArrowRight } from '@clients/extension/src/icons'
+import type { VaultProps } from '@clients/extension/src/utils/interfaces'
+import routeKeys from '@clients/extension/src/utils/route-keys'
+import {
+  getStoredVaults,
+  setStoredVaults,
+} from '@clients/extension/src/utils/storage'
+import { Button } from 'antd'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 interface InitialState {
-  vault?: VaultProps;
-  vaults: VaultProps[];
+  vault?: VaultProps
+  vaults: VaultProps[]
 }
 
 const Component = () => {
-  const { t } = useTranslation();
-  const initialState: InitialState = { vaults: [] };
-  const [state, setState] = useState(initialState);
-  const { vault, vaults } = state;
-  const navigate = useNavigate();
-  const goBack = useGoBack();
+  const { t } = useTranslation()
+  const initialState: InitialState = { vaults: [] }
+  const [state, setState] = useState(initialState)
+  const { vault, vaults } = state
+  const navigate = useNavigate()
+  const goBack = useGoBack()
 
   const handleSelect = (uid: string) => {
     setStoredVaults(
-      vaults.map((vault) => ({ ...vault, active: vault.uid === uid })),
-    ).then(() => {
-      goBack(routeKeys.main);
-    });
-  };
+      vaults.map(vault => ({ ...vault, active: vault.uid === uid }))
+    )
+      .then(() => {
+        goBack(routeKeys.main)
+      })
+      .catch(error => {
+        console.error('Error setting stored vaults:', error)
+      })
+  }
 
   const componentDidMount = (): void => {
-    getStoredVaults().then((vaults) => {
-      const vault = vaults.find(({ active }) => active);
+    getStoredVaults().then(vaults => {
+      const vault = vaults.find(({ active }) => active)
 
-      setState((prevState) => ({ ...prevState, vault, vaults }));
-    });
-  };
+      setState(prevState => ({ ...prevState, vault, vaults }))
+    })
+  }
 
-  useEffect(componentDidMount, []);
+  useEffect(componentDidMount, [])
 
   return vault ? (
     <div className="layout vaults-page">
       <div className="header">
-        <span className="heading">{t(messageKeys.CHOOSE_VAULT)}</span>
+        <span className="heading">{t('choose_vault')}</span>
         <ArrowLeft
           className="icon icon-left"
           onClick={() => goBack(routeKeys.main)}
@@ -56,25 +60,25 @@ const Component = () => {
           <div className="list-item">
             <span className="label">{vault?.name}</span>
             <span className="extra">
-              <span className="text">{t(messageKeys.ACTIVE)}</span>
+              <span className="text">{t('active')}</span>
             </span>
           </div>
         </div>
         {vaults.length > 1 && (
           <>
-            <span className="divider">{t(messageKeys.OTHER_VAULTS)}</span>
+            <span className="divider">{t('other_vaults')}</span>
             <div className="list list-arrow list-action">
               {vaults
                 .filter(({ uid }) => uid !== vault.uid)
                 .map(({ name, uid }) => (
-                  <div
+                  <button
                     key={uid}
                     onClick={() => handleSelect(uid)}
                     className="list-item"
                   >
                     <span className="label">{name}</span>
                     <ArrowRight className="action" />
-                  </div>
+                  </button>
                 ))}
             </div>
           </>
@@ -86,13 +90,13 @@ const Component = () => {
           shape="round"
           block
         >
-          {t(messageKeys.ADD_NEW_VAULT)}
+          {t('add_new_vault')}
         </Button>
       </div>
     </div>
   ) : (
     <></>
-  );
-};
+  )
+}
 
-export default Component;
+export default Component

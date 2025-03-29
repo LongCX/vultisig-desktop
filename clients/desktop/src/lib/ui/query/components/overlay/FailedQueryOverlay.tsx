@@ -1,14 +1,15 @@
-import { Button } from '../../../buttons/Button';
-import { BodyPortal } from '../../../dom/BodyPortal';
-import { VStack } from '../../../layout/Stack';
-import { Backdrop } from '../../../modal/Backdrop';
-import { OnCloseProp, TitleProp } from '../../../props';
-import { QueryOverlayContent } from './QueryOverlayContent';
+import { OnCloseProp, TitleProp } from '@lib/ui/props'
+
+import { Button } from '../../../buttons/Button'
+import { BodyPortal } from '../../../dom/BodyPortal'
+import { VStack } from '../../../layout/Stack'
+import { Backdrop } from '../../../modal/Backdrop'
+import { QueryOverlayContent } from './QueryOverlayContent'
 
 type FailedQueryOverlayProps = TitleProp &
   OnCloseProp & {
-    closeText?: string;
-  };
+    closeText?: string
+  }
 
 export const FailedQueryOverlay: React.FC<FailedQueryOverlayProps> = ({
   title,
@@ -25,4 +26,4 @@ export const FailedQueryOverlay: React.FC<FailedQueryOverlayProps> = ({
       </QueryOverlayContent>
     </Backdrop>
   </BodyPortal>
-);
+)

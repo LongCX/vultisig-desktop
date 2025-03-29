@@ -1,9 +1,8 @@
-import { KeysignChainSpecific } from '../../../chain/keysign/KeysignChainSpecific';
-import { CoinAmount, CoinKey } from '../../../coin/Coin';
+import { CoinAmount, CoinKey } from '@core/chain/coin/Coin'
 
-export type SwapFee = CoinKey & CoinAmount;
+export type SwapFee = CoinKey & CoinAmount
 
 export type SwapFees = {
-  network?: SwapFee & { chainSpecific: KeysignChainSpecific };
-  swap: SwapFee;
-};
+  network?: SwapFee
+  swap: SwapFee
+}

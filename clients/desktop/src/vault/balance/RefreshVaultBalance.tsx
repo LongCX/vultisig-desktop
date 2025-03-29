@@ -1,31 +1,31 @@
-import { useMutation } from '@tanstack/react-query';
+import { extractAccountCoinKey } from '@core/chain/coin/AccountCoin'
+import { useInvalidateQueries } from '@lib/ui/query/hooks/useInvalidateQueries'
+import { useMutation } from '@tanstack/react-query'
 
-import { getBalanceQueryKey } from '../../coin/query/useBalanceQuery';
-import { getCoinPricesQueryKeys } from '../../coin/query/useCoinPricesQuery';
-import { getStorageCoinKey } from '../../coin/utils/storageCoin';
-import { useInvalidateQueries } from '../../lib/ui/query/hooks/useInvalidateQueries';
-import { useFiatCurrency } from '../../preferences/state/fiatCurrency';
-import { PageHeaderRefresh } from '../../ui/page/PageHeaderRefresh';
-import { useCurrentVaultCoins } from '../state/currentVault';
+import { getBalanceQueryKey } from '../../coin/query/useBalancesQuery'
+import { getCoinPricesQueryKeys } from '../../coin/query/useCoinPricesQuery'
+import { useFiatCurrency } from '../../preferences/state/fiatCurrency'
+import { PageHeaderRefresh } from '../../ui/page/PageHeaderRefresh'
+import { useCurrentVaultCoins } from '../state/currentVault'
 
 export const RefreshVaultBalance = () => {
-  const invalidateQueries = useInvalidateQueries();
+  const invalidateQueries = useInvalidateQueries()
 
-  const coins = useCurrentVaultCoins();
+  const coins = useCurrentVaultCoins()
 
-  const [fiatCurrency] = useFiatCurrency();
+  const [fiatCurrency] = useFiatCurrency()
 
   const { mutate: refresh, isPending } = useMutation({
     mutationFn: () => {
       return invalidateQueries(
         getCoinPricesQueryKeys({
-          coins: coins.map(getStorageCoinKey),
+          coins,
           fiatCurrency,
         }),
-        ...coins.map(coin => getBalanceQueryKey(getStorageCoinKey(coin)))
-      );
+        ...coins.map(extractAccountCoinKey).map(getBalanceQueryKey)
+      )
     },
-  });
+  })
 
-  return <PageHeaderRefresh onClick={() => refresh()} isPending={isPending} />;
-};
+  return <PageHeaderRefresh onClick={() => refresh()} isPending={isPending} />
+}

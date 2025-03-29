@@ -1,24 +1,27 @@
-import { useTranslation } from 'react-i18next';
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { useTranslation } from 'react-i18next'
 
-import { getSwapQuoteProviderName } from '../../../../chain/swap/quote/getSwapQuoteProviderName';
-import { StrictInfoRow } from '../../../../lib/ui/layout/StrictInfoRow';
-import { Spinner } from '../../../../lib/ui/loaders/Spinner';
-import { MatchQuery } from '../../../../lib/ui/query/components/MatchQuery';
-import { useSwapQuoteQuery } from '../../queries/useSwapQuoteQuery';
+import { getSwapQuoteProviderName } from '../../../../chain/swap/quote/getSwapQuoteProviderName'
+import { Skeleton } from '../../../../components/skeleton'
+import { StrictInfoRow } from '../../../../lib/ui/layout/StrictInfoRow'
+import { Text } from '../../../../lib/ui/text'
+import { useSwapQuoteQuery } from '../../queries/useSwapQuoteQuery'
 
 export const SwapProvider = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const query = useSwapQuoteQuery();
+  const query = useSwapQuoteQuery()
 
   return (
     <StrictInfoRow>
-      <span>{t('provider')}</span>
+      <Text>{t('provider')}</Text>
       <MatchQuery
         value={query}
-        pending={() => <Spinner />}
-        success={getSwapQuoteProviderName}
+        pending={() => <Skeleton width="88px" height="12px" />}
+        success={quote => (
+          <Text color="supporting">{getSwapQuoteProviderName(quote)}</Text>
+        )}
       />
     </StrictInfoRow>
-  );
-};
+  )
+}

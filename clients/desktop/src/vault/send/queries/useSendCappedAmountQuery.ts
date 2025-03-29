@@ -1,25 +1,24 @@
-import { useCallback } from 'react';
+import { toChainAmount } from '@core/chain/amount/toChainAmount'
+import { extractAccountCoinKey } from '@core/chain/coin/AccountCoin'
+import { getFeeAmount } from '@core/chain/tx/fee/getFeeAmount'
+import { useTransformQueriesData } from '@lib/ui/query/hooks/useTransformQueriesData'
+import { shouldBePresent } from '@lib/utils/assert/shouldBePresent'
+import { useCallback } from 'react'
 
-import { getFeeAmount } from '../../../chain/tx/fee/utils/getFeeAmount';
-import { toChainAmount } from '../../../chain/utils/toChainAmount';
-import { useBalanceQuery } from '../../../coin/query/useBalanceQuery';
-import { storageCoinToCoin } from '../../../coin/utils/storageCoin';
-import { useTransform } from '../../../lib/ui/hooks/useTransform';
-import { useTransformQueriesData } from '../../../lib/ui/query/hooks/useTransformQueriesData';
-import { shouldBePresent } from '@lib/utils/assert/shouldBePresent';
-import { useCurrentVaultCoin } from '../../state/currentVault';
-import { useSendChainSpecificQuery } from '../queries/useSendChainSpecificQuery';
-import { useSendAmount } from '../state/amount';
-import { useCurrentSendCoin } from '../state/sendCoin';
-import { capSendAmountToMax } from '../utils/capSendAmountToMax';
+import { useBalanceQuery } from '../../../coin/query/useBalanceQuery'
+import { useCurrentVaultCoin } from '../../state/currentVault'
+import { useSendChainSpecificQuery } from '../queries/useSendChainSpecificQuery'
+import { useSendAmount } from '../state/amount'
+import { useCurrentSendCoin } from '../state/sendCoin'
+import { capSendAmountToMax } from '../utils/capSendAmountToMax'
 
 export const useSendCappedAmountQuery = () => {
-  const [coinKey] = useCurrentSendCoin();
-  const coin = useTransform(useCurrentVaultCoin(coinKey), storageCoinToCoin);
-  const [amount] = useSendAmount();
+  const [coinKey] = useCurrentSendCoin()
+  const coin = useCurrentVaultCoin(coinKey)
+  const [amount] = useSendAmount()
 
-  const chainSpecificQuery = useSendChainSpecificQuery();
-  const balanceQuery = useBalanceQuery(coin);
+  const chainSpecificQuery = useSendChainSpecificQuery()
+  const balanceQuery = useBalanceQuery(extractAccountCoinKey(coin))
 
   return useTransformQueriesData(
     {
@@ -28,23 +27,24 @@ export const useSendCappedAmountQuery = () => {
     },
     useCallback(
       ({ chainSpecific, balance }) => {
-        const { decimals } = coin;
+        const chainAmount = toChainAmount(
+          shouldBePresent(amount),
+          coin.decimals
+        )
 
-        const chainAmount = toChainAmount(shouldBePresent(amount), decimals);
-
-        const feeAmount = getFeeAmount(chainSpecific);
+        const feeAmount = getFeeAmount(chainSpecific)
 
         return {
-          decimals,
+          decimals: coin.decimals,
           amount: capSendAmountToMax({
             amount: chainAmount,
-            coin,
+            coin: coin,
             fee: feeAmount,
-            balance: balance.amount,
+            balance,
           }),
-        };
+        }
       },
-      [coin, amount]
+      [amount, coin]
     )
-  );
-};
+  )
+}

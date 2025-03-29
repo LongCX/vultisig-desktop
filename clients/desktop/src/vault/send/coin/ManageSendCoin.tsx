@@ -1,27 +1,26 @@
-import { useTranslation } from 'react-i18next';
+import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
+import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
+import { useTranslation } from 'react-i18next'
 
-import { fromChainAmount } from '../../../chain/utils/fromChainAmount';
-import { CoinInputContainer } from '../../../coin/ui/inputs/CoinInputContainer';
-import { SelectCoinOverlay } from '../../../coin/ui/inputs/SelectCoinOverlay';
-import { Opener } from '../../../lib/ui/base/Opener';
-import { InputContainer } from '../../../lib/ui/inputs/InputContainer';
-import { InputLabel } from '../../../lib/ui/inputs/InputLabel';
-import { Text } from '../../../lib/ui/text';
-import { formatAmount } from '@lib/utils/formatAmount';
+import { CoinInputContainer } from '../../../coin/ui/inputs/CoinInputContainer'
+import { CoinOption } from '../../../coin/ui/inputs/CoinOption'
+import { SelectItemModal } from '../../../coin/ui/inputs/SelectItemModal'
+import { Opener } from '../../../lib/ui/base/Opener'
+import { InputContainer } from '../../../lib/ui/inputs/InputContainer'
+import { InputLabel } from '../../../lib/ui/inputs/InputLabel'
+import { Text } from '../../../lib/ui/text'
 import {
   useCurrentVaultCoin,
   useCurrentVaultCoins,
-} from '../../state/currentVault';
-import { useCurrentSendCoin } from '../state/sendCoin';
-import { SendCoinBalanceDependant } from './balance/SendCoinBalanceDependant';
+} from '../../state/currentVault'
+import { useCurrentSendCoin } from '../state/sendCoin'
+import { SendCoinBalanceDependant } from './balance/SendCoinBalanceDependant'
 
 export const ManageSendCoin = () => {
-  const [value, setValue] = useCurrentSendCoin();
-  const coin = useCurrentVaultCoin(value);
-
-  const { t } = useTranslation();
-
-  const options = useCurrentVaultCoins();
+  const [value, setValue] = useCurrentSendCoin()
+  const coin = useCurrentVaultCoin(value)
+  const { t } = useTranslation()
+  const options = useCurrentVaultCoins()
 
   return (
     <InputContainer>
@@ -34,12 +33,17 @@ export const ManageSendCoin = () => {
           />
         )}
         renderContent={({ onClose }) => (
-          <SelectCoinOverlay
+          <SelectItemModal
+            title={t('choose_tokens')}
+            optionComponent={CoinOption}
+            filterFunction={(option, query) =>
+              option.ticker.toLowerCase().startsWith(query.toLowerCase())
+            }
             onFinish={newValue => {
               if (newValue) {
-                setValue(newValue);
+                setValue(newValue)
               }
-              onClose();
+              onClose()
             }}
             options={options}
           />
@@ -55,11 +59,13 @@ export const ManageSendCoin = () => {
       >
         <span>{t('balance')}:</span>
         <SendCoinBalanceDependant
-          success={({ amount, decimals }) => (
-            <span>{formatAmount(fromChainAmount(amount, decimals))}</span>
+          success={amount => (
+            <span>
+              {formatTokenAmount(fromChainAmount(amount, coin.decimals))}
+            </span>
           )}
         />
       </Text>
     </InputContainer>
-  );
-};
+  )
+}

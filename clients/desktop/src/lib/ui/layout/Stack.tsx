@@ -1,24 +1,24 @@
-import React from 'react';
-import styled, { css } from 'styled-components';
+import React from 'react'
+import styled, { css } from 'styled-components'
 
-import { toSizeUnit } from '../css/toSizeUnit';
+import { toSizeUnit } from '../css/toSizeUnit'
 
 type FixedDirectionStackProps = {
-  gap?: React.CSSProperties['gap'];
-  alignItems?: React.CSSProperties['alignItems'];
-  justifyContent?: React.CSSProperties['justifyContent'];
-  wrap?: React.CSSProperties['flexWrap'];
-  fullWidth?: boolean;
-  fullHeight?: boolean;
-  fullSize?: boolean;
-  flexGrow?: boolean;
-  children?: React.ReactNode;
-  scrollable?: boolean;
-};
+  gap?: React.CSSProperties['gap']
+  alignItems?: React.CSSProperties['alignItems']
+  justifyContent?: React.CSSProperties['justifyContent']
+  wrap?: React.CSSProperties['flexWrap']
+  fullWidth?: boolean
+  fullHeight?: boolean
+  fullSize?: boolean
+  flexGrow?: boolean
+  children?: React.ReactNode
+  scrollable?: boolean
+}
 
-export type StackProps = FixedDirectionStackProps & {
-  direction: React.CSSProperties['flexDirection'];
-};
+type StackProps = FixedDirectionStackProps & {
+  direction: React.CSSProperties['flexDirection']
+}
 
 const formatFlexAlignment = (
   value:
@@ -26,13 +26,13 @@ const formatFlexAlignment = (
     | React.CSSProperties['justifyContent']
 ) => {
   if (value === 'end' || value === 'start') {
-    return `flex-${value}`;
+    return `flex-${value}`
   }
 
-  return value;
-};
+  return value
+}
 
-export const stack = ({
+const stack = ({
   gap,
   alignItems,
   justifyContent,
@@ -87,22 +87,18 @@ export const stack = ({
       flex-shrink: 0;
     }
   `}
-`;
+`
 
 export const vStack = (props: FixedDirectionStackProps = {}) =>
-  stack({ ...props, direction: 'column' });
+  stack({ ...props, direction: 'column' })
 
 export const hStack = (props: FixedDirectionStackProps = {}) =>
-  stack({ ...props, direction: 'row' });
+  stack({ ...props, direction: 'row' })
 
 export const VStack = styled.div<FixedDirectionStackProps>`
   ${vStack}
-`;
+`
 
 export const HStack = styled.div<FixedDirectionStackProps>`
   ${hStack}
-`;
-
-export const Stack = styled.div<StackProps>`
-  ${stack}
-`;
+`

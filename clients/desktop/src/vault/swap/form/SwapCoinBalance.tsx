@@ -1,48 +1,46 @@
-import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
+import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
+import { extractAccountCoinKey } from '@core/chain/coin/AccountCoin'
+import { CoinKey } from '@core/chain/coin/Coin'
+import { ValueProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
+import { useTranslation } from 'react-i18next'
+import styled from 'styled-components'
 
-import { fromChainAmount } from '../../../chain/utils/fromChainAmount';
-import { CoinKey } from '../../../coin/Coin';
-import { useBalanceQuery } from '../../../coin/query/useBalanceQuery';
-import { storageCoinToCoin } from '../../../coin/utils/storageCoin';
-import { Spinner } from '../../../lib/ui/loaders/Spinner';
-import { ValueProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { text } from '../../../lib/ui/text';
-import { formatAmount } from '@lib/utils/formatAmount';
-import { useCurrentVaultCoin } from '../../state/currentVault';
+import { useBalanceQuery } from '../../../coin/query/useBalanceQuery'
+import { Spinner } from '../../../lib/ui/loaders/Spinner'
+import { Text, text } from '../../../lib/ui/text'
+import { useCurrentVaultCoin } from '../../state/currentVault'
 
 const Container = styled.div`
   ${text({
-    color: 'supporting',
+    color: 'shy',
     weight: '700',
-    size: 14,
+    size: 12,
     centerVertically: {
       gap: 8,
     },
   })}
-`;
+`
 
 export const SwapCoinBalance = ({ value }: ValueProp<CoinKey>) => {
-  const { t } = useTranslation();
-
-  const coin = useCurrentVaultCoin(value);
-
-  const query = useBalanceQuery(storageCoinToCoin(coin));
+  const { t } = useTranslation()
+  const coin = useCurrentVaultCoin(value)
+  const query = useBalanceQuery(extractAccountCoinKey(coin))
 
   return (
     <Container>
-      <span>{t('balance')}:</span>
-      <span>
-        <MatchQuery
-          value={query}
-          pending={() => <Spinner />}
-          error={() => t('failed_to_load')}
-          success={({ amount, decimals }) => (
-            <span>{formatAmount(fromChainAmount(amount, decimals))}</span>
-          )}
-        />
-      </span>
+      <MatchQuery
+        value={query}
+        pending={() => <Spinner />}
+        error={() => t('failed_to_load')}
+        success={amount => (
+          <Text size={12} color="shy" weight={500}>
+            {formatTokenAmount(fromChainAmount(amount, coin.decimals))}
+            {` ${coin.ticker}`}
+          </Text>
+        )}
+      />
     </Container>
-  );
-};
+  )
+}

@@ -1,15 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import {
-  getStoredCurrency,
-  getStoredLanguage,
-} from "../../../../utils/storage";
-import { Currency, Language, languageName } from "../../../../utils/constants";
-import useGoBack from "../../../../hooks/go-back";
-import messageKeys from "../../../../utils/message-keys";
-import routeKeys from "../../../../utils/route-keys";
-
+import packageJson from '@clients/extension/package.json'
+import useGoBack from '@clients/extension/src/hooks/go-back'
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,41 +8,45 @@ import {
   SettingsOne,
   Translate,
   Vultisig,
-} from "../../../../icons";
+} from '@clients/extension/src/icons'
+import { Currency } from '@clients/extension/src/utils/constants'
+import routeKeys from '@clients/extension/src/utils/route-keys'
+import { getStoredCurrency } from '@clients/extension/src/utils/storage'
+import { languageName } from '@core/ui/i18n/Language'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
-import packageJson from "../../../../../package.json";
+import { useLanguageQuery } from '../../../../i18n/state/language'
 
 interface InitialState {
-  currency: Currency;
-  language: Language;
+  currency: Currency
 }
 
 const Component = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const initialState: InitialState = {
     currency: Currency.USD,
-    language: Language.ENGLISH,
-  };
-  const [state, setState] = useState(initialState);
-  const { currency, language } = state;
-  const goBack = useGoBack();
+  }
+  const [state, setState] = useState(initialState)
+  const { currency } = state
+  const goBack = useGoBack()
 
   const componentDidMount = (): void => {
-    getStoredCurrency().then((currency) => {
-      setState((prevState) => ({ ...prevState, currency }));
-    });
+    getStoredCurrency().then(currency => {
+      setState(prevState => ({ ...prevState, currency }))
+    })
+  }
 
-    getStoredLanguage().then((language) => {
-      setState((prevState) => ({ ...prevState, language }));
-    });
-  };
+  const languageQuery = useLanguageQuery()
 
-  useEffect(componentDidMount, []);
+  useEffect(componentDidMount, [])
 
   return (
     <div className="layout settings-page">
       <div className="header">
-        <span className="heading">{t(messageKeys.SETTINGS)}</span>
+        <span className="heading">{t('settings')}</span>
         <ArrowLeft
           className="icon icon-left"
           onClick={() => goBack(routeKeys.main)}
@@ -66,26 +60,31 @@ const Component = () => {
             className="list-item"
           >
             <SettingsOne className="icon" />
-            <span className="label">{t(messageKeys.VAULT_SETTINGS)}</span>
+            <span className="label">{t('vault_settings')}</span>
             <ArrowRight className="action" />
           </Link>
-          <Link
-            to={routeKeys.settings.language}
-            state={true}
-            className="list-item"
-          >
-            <Translate className="icon" />
-            <span className="label">{t(messageKeys.LANGUAGE)}</span>
-            <span className="extra">{languageName[language]}</span>
-            <ArrowRight className="action" />
-          </Link>
+          <MatchQuery
+            value={languageQuery}
+            success={language => (
+              <Link
+                to={routeKeys.settings.language}
+                state={true}
+                className="list-item"
+              >
+                <Translate className="icon" />
+                <span className="label">{t('language')}</span>
+                <span className="extra">{languageName[language]}</span>
+                <ArrowRight className="action" />
+              </Link>
+            )}
+          />
           <Link
             to={routeKeys.settings.currency}
             state={true}
             className="list-item"
           >
             <CircleDollar className="icon" />
-            <span className="label">{t(messageKeys.CURRENCY)}</span>
+            <span className="label">{t('currency')}</span>
             <span className="extra">{currency}</span>
             <ArrowRight className="action" />
           </Link>
@@ -96,11 +95,11 @@ const Component = () => {
             className="list-item"
           >
             <CircleHelp className="icon" />
-            <span className="label">{t(messageKeys.FAQ)}</span>
+            <span className="label">{t('faq')}</span>
             <ArrowRight className="action" />
           </a>
         </div>
-        <span className="divider">{t(messageKeys.OTHER)}</span>
+        <span className="divider">{t('other')}</span>
         <div className="list list-action list-icon">
           <a
             href="https://vultisig.com/vult"
@@ -109,7 +108,7 @@ const Component = () => {
             className="list-item"
           >
             <Vultisig className="icon" />
-            <span className="label">{t(messageKeys.VULT_TOKEN)}</span>
+            <span className="label">{t('vult_token')}</span>
           </a>
         </div>
       </div>
@@ -118,12 +117,13 @@ const Component = () => {
           target="_blank"
           href="https://chromewebstore.google.com/detail/vulticonnect/ggafhcdaplkhmmnlbfjpnnkepdfjaelb"
           className="version"
+          rel="noreferrer"
         >
           VULTICONNECT V{packageJson.version}
         </a>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Component;
+export default Component

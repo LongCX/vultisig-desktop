@@ -1,31 +1,31 @@
-import { useMutation } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { OnBackProp, OnForwardProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { OnBackProp, OnForwardProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { useCurrentLocalPartyId } from '../state/currentLocalPartyId';
-import { useCurrentServerUrl } from '../state/currentServerUrl';
-import { joinSession } from '../utils/joinSession';
-import { KeygenNetworkReminder } from './KeygenNetworkReminder';
-import { PendingKeygenMessage } from './PendingKeygenMessage';
-import { useCurrentSessionId } from './state/currentSessionId';
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { useMpcLocalPartyId } from '../../../mpc/localPartyId/state/mpcLocalPartyId'
+import { useMpcServerUrl } from '../../../mpc/serverType/state/mpcServerUrl'
+import { useMpcSessionId } from '../../../mpc/session/state/mpcSession'
+import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { joinSession } from '../utils/joinSession'
+import { KeygenNetworkReminder } from './KeygenNetworkReminder'
+import { PendingKeygenMessage } from './PendingKeygenMessage'
 
 export const JoinKeygenSessionStep = ({
   onForward,
   onBack,
 }: OnForwardProp & Partial<OnBackProp>) => {
-  const sessionId = useCurrentSessionId();
+  const sessionId = useMpcSessionId()
 
-  const serverUrl = useCurrentServerUrl();
+  const serverUrl = useMpcServerUrl()
 
-  const localPartyId = useCurrentLocalPartyId();
+  const localPartyId = useMpcLocalPartyId()
 
   const { mutate: start, ...mutationStatus } = useMutation({
     mutationFn: async () => {
@@ -33,26 +33,23 @@ export const JoinKeygenSessionStep = ({
         serverUrl,
         sessionId,
         localPartyId,
-      });
+      })
     },
     onSuccess: onForward,
-  });
+  })
 
-  useEffect(() => start(), [start]);
+  useEffect(() => start(), [start])
 
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const title = t('join_session');
+  const title = t('join_session')
 
   return (
     <MatchQuery
       value={mutationStatus}
       success={() => null}
       error={() => (
-        <FullPageFlowErrorState
-          title={title}
-          message={t('failed_to_join_session')}
-        />
+        <FullPageFlowErrorState message={t('failed_to_join_session')} />
       )}
       pending={() => (
         <>
@@ -73,5 +70,5 @@ export const JoinKeygenSessionStep = ({
         </>
       )}
     />
-  );
-};
+  )
+}

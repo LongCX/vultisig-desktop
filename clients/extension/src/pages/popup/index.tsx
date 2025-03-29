@@ -1,33 +1,28 @@
-import { StrictMode, useEffect } from "react";
-import ReactDOM from "react-dom/client";
+import '@clients/extension/src/styles/index.scss'
+import '@clients/extension/src/pages/popup/index.scss'
 
-import { getStoredLanguage } from "../../utils/storage";
-import i18n from "../../i18n/config";
+import ConfigProvider from '@clients/extension/src/components/config-provider'
+import Routing from '@clients/extension/src/pages/popup/routes'
+import { WalletCoreProvider } from '@core/ui/chain/providers/WalletCoreProvider'
+import { StrictMode } from 'react'
+import ReactDOM from 'react-dom/client'
 
-import ConfigProvider from "../../components/config-provider";
-import Routing from "../../pages/popup/routes";
-
-import "../../styles/index.scss";
-import "../../pages/popup/index.scss";
+import { ExtensionProviders } from '../../state/ExtensionProviders'
 
 const Component = () => {
-  const componentDidMount = (): void => {
-    getStoredLanguage().then((language) => {
-      i18n.changeLanguage(language);
-    });
-  };
-
-  useEffect(componentDidMount, []);
-
   return (
     <ConfigProvider>
       <Routing />
     </ConfigProvider>
-  );
-};
+  )
+}
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Component />
+    <ExtensionProviders>
+      <WalletCoreProvider>
+        <Component />
+      </WalletCoreProvider>
+    </ExtensionProviders>
   </StrictMode>
-);
+)

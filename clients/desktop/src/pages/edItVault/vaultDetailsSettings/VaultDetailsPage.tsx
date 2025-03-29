@@ -1,50 +1,54 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { Text } from '../../../lib/ui/text';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { PageSlice } from '../../../ui/page/PageSlice';
-import { getVaultTypeText } from '../../../utils/util';
-import { useCurrentVault } from '../../../vault/state/currentVault';
-import { getVaultParticipantInfoFormattedForUI } from '../../../vault/utils/helpers';
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { Text } from '../../../lib/ui/text'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { PageSlice } from '../../../ui/page/PageSlice'
+import { getVaultTypeText } from '../../../utils/util'
+import { useCurrentVault } from '../../../vault/state/currentVault'
+import { getVaultParticipantInfoFormattedForUI } from '../../../vault/utils/helpers'
 import {
   AutoCenteredText,
   Container,
   ListItemPanel,
-} from './VaultDetailsPage.styles';
+} from './VaultDetailsPage.styles'
 
 const VaultDetailsPage = () => {
-  const { t } = useTranslation();
-  const currentVault = useCurrentVault();
+  const { t } = useTranslation()
+  const currentVault = useCurrentVault()
 
   if (!currentVault) {
-    return <></>;
+    return <></>
   }
 
-  const { name, public_key_eddsa, public_key_ecdsa, signers, local_party_id } =
-    currentVault;
+  const {
+    name,
+    public_key_eddsa,
+    public_key_ecdsa,
+    signers,
+    local_party_id,
+    lib_type,
+  } = currentVault
   const { localPartyIndex, totalSigners } =
     getVaultParticipantInfoFormattedForUI({
       signers,
       local_party_id,
-    });
+    })
 
-  const vaultTypeText = getVaultTypeText(signers.length, t);
+  const vaultTypeText = getVaultTypeText(signers.length, t)
 
   return (
     <Container flexGrow gap={16}>
       <PageHeader
         primaryControls={<PageHeaderBackButton />}
-        title={
-          <PageHeaderTitle>{t('vault_details_page_title')}</PageHeaderTitle>
-        }
+        title={<PageHeaderTitle>{t('details')}</PageHeaderTitle>}
       />
       <PageSlice gap={12}>
         <ListItemPanel>
           <VStack fullWidth alignItems="start" justifyContent="space-between">
-            <Text weight={900}>{t('vault_details_page_vault_name')}</Text>
+            <Text weight={900}>{t('vault_name')}</Text>
             <Text color="supporting" size={13}>
               {name}
             </Text>
@@ -52,10 +56,17 @@ const VaultDetailsPage = () => {
         </ListItemPanel>
         <ListItemPanel>
           <VStack fullWidth alignItems="start" justifyContent="space-between">
-            <Text weight={900}>{t('vault_details_page_vault_part')}</Text>
+            <Text weight={900}>{t('vault_part')}</Text>
             <Text color="supporting" size={13}>
-              {t('vault_details_page_part_of_vault')} {localPartyIndex}{' '}
-              {t('vault_details_page_of_word')} {totalSigners}
+              {t('share')} {localPartyIndex} {t('of')} {totalSigners}
+            </Text>
+          </VStack>
+        </ListItemPanel>
+        <ListItemPanel>
+          <VStack fullWidth alignItems="start" justifyContent="space-between">
+            <Text weight={900}>{t('vault_details_page_vault_type')}</Text>
+            <Text color="supporting" size={13}>
+              {lib_type}
             </Text>
           </VStack>
         </ListItemPanel>
@@ -83,15 +94,14 @@ const VaultDetailsPage = () => {
             <VStack fullWidth alignItems="start" justifyContent="space-between">
               <Text color="supporting" weight={900} size={13}>
                 {t('vault_details_page_signer_word')} {index + 1}: {signer}{' '}
-                {signer === local_party_id &&
-                  `(${t('vault_details_page_this_device')})`}
+                {signer === local_party_id && `(${t('this_device')})`}
               </Text>
             </VStack>
           </ListItemPanel>
         ))}
       </PageSlice>
     </Container>
-  );
-};
+  )
+}
 
-export default VaultDetailsPage;
+export default VaultDetailsPage

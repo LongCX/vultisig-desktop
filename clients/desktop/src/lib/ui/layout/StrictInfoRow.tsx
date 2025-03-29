@@ -1,7 +1,7 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
-import { text } from '../text';
-import { hStack } from './Stack';
+import { text } from '../text'
+import { hStack } from './Stack'
 
 export const StrictInfoRow = styled.div`
   ${hStack({
@@ -11,9 +11,7 @@ export const StrictInfoRow = styled.div`
   })}
 
   ${text({
-    color: 'contrast',
+    color: 'shy',
     size: 12,
-    weight: 700,
-    family: 'mono',
   })}
-`;
+`

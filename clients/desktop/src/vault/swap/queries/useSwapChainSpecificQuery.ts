@@ -1,33 +1,30 @@
-import { getChainSpecific } from '../../../chain/keysign/chainSpecific/getChainSpecific';
-import { GetChainSpecificInput } from '../../../chain/keysign/chainSpecific/GetChainSpecificInput';
-import { getSwapKeysignPayloadFields } from '../../../chain/swap/keysign/getSwapKeysignPayloadFields';
-import { toChainAmount } from '../../../chain/utils/toChainAmount';
-import { chainFeeCoin } from '../../../coin/chainFeeCoin';
-import { areEqualCoins } from '../../../coin/Coin';
-import { getChainSpecificQueryKey } from '../../../coin/query/useChainSpecificQuery';
-import { getCoinMetaKey } from '../../../coin/utils/coinMeta';
-import { storageCoinToCoin } from '../../../coin/utils/storageCoin';
-import { useStateDependentQuery } from '../../../lib/ui/query/hooks/useStateDependentQuery';
-import { isOneOf } from '@lib/utils/array/isOneOf';
-import { UtxoChain } from '../../../model/chain';
-import { useCurrentVaultCoin } from '../../state/currentVault';
-import { useFromAmount } from '../state/fromAmount';
-import { useFromCoin } from '../state/fromCoin';
-import { useToCoin } from '../state/toCoin';
-import { useSwapQuoteQuery } from './useSwapQuoteQuery';
+import { toChainAmount } from '@core/chain/amount/toChainAmount'
+import { UtxoChain } from '@core/chain/Chain'
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
+import { areEqualCoins } from '@core/chain/coin/Coin'
+import { getChainSpecific } from '@core/mpc/keysign/chainSpecific'
+import { ChainSpecificResolverInput } from '@core/mpc/keysign/chainSpecific/ChainSpecificResolver'
+import { useStateDependentQuery } from '@lib/ui/query/hooks/useStateDependentQuery'
+import { isOneOf } from '@lib/utils/array/isOneOf'
+
+import { getSwapKeysignPayloadFields } from '../../../chain/swap/keysign/getSwapKeysignPayloadFields'
+import { getChainSpecificQueryKey } from '../../../coin/query/useChainSpecificQuery'
+import { useCurrentVaultCoin } from '../../state/currentVault'
+import { useFromAmount } from '../state/fromAmount'
+import { useFromCoin } from '../state/fromCoin'
+import { useToCoin } from '../state/toCoin'
+import { useSwapQuoteQuery } from './useSwapQuoteQuery'
 
 export const useSwapChainSpecificQuery = () => {
-  const [fromCoinKey] = useFromCoin();
-  const fromStorageCoin = useCurrentVaultCoin(fromCoinKey);
-  const fromCoin = storageCoinToCoin(fromStorageCoin);
+  const [fromCoinKey] = useFromCoin()
+  const fromCoin = useCurrentVaultCoin(fromCoinKey)
 
-  const [toCoinKey] = useToCoin();
-  const toStorageCoin = useCurrentVaultCoin(toCoinKey);
-  const toCoin = storageCoinToCoin(toStorageCoin);
+  const [toCoinKey] = useToCoin()
+  const toCoin = useCurrentVaultCoin(toCoinKey)
 
-  const [fromAmount] = useFromAmount();
+  const [fromAmount] = useFromAmount()
 
-  const swapQuoteQuery = useSwapQuoteQuery();
+  const swapQuoteQuery = useSwapQuoteQuery()
 
   return useStateDependentQuery({
     state: {
@@ -40,31 +37,31 @@ export const useSwapChainSpecificQuery = () => {
         quote: swapQuote,
         fromCoin,
         toCoin: toCoin,
-      });
+      })
 
-      const input: GetChainSpecificInput = {
+      const input: ChainSpecificResolverInput = {
         coin: fromCoin,
         amount: fromAmount,
         receiver: toAddress,
-      };
+      }
 
       if ('native' in swapQuote) {
-        const { swapChain } = swapQuote.native;
-        const nativeFeeCoin = getCoinMetaKey(chainFeeCoin[swapChain]);
+        const { swapChain } = swapQuote.native
+        const nativeFeeCoin = chainFeeCoin[swapChain]
 
-        input.isDeposit = areEqualCoins(fromCoinKey, nativeFeeCoin);
+        input.isDeposit = areEqualCoins(fromCoinKey, nativeFeeCoin)
       }
 
       if (isOneOf(fromCoin.chain, Object.values(UtxoChain))) {
         input.feeSettings = {
           priority: 'fast',
-        };
+        }
       }
 
       return {
         queryKey: getChainSpecificQueryKey(input),
         queryFn: () => getChainSpecific(input),
-      };
+      }
     },
-  });
-};
+  })
+}

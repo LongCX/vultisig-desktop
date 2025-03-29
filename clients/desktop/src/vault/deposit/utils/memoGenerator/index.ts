@@ -1,16 +1,17 @@
-import { shouldBePresent } from '@lib/utils/assert/shouldBePresent';
-import { match } from '@lib/utils/match';
-import { FieldValues } from 'react-hook-form';
-import { chainFeeCoin } from '../../../../coin/chainFeeCoin';
-import { MayaChainPool } from '../../../../lib/types/deposit';
-import { Chain } from '../../../../model/chain';
-import { ChainAction } from '../../ChainAction';
+import { Chain } from '@core/chain/Chain'
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
+import { shouldBePresent } from '@lib/utils/assert/shouldBePresent'
+import { match } from '@lib/utils/match'
+import { FieldValues } from 'react-hook-form'
+
+import { MayaChainPool } from '../../../../lib/types/deposit'
+import { ChainAction } from '../../ChainAction'
 
 interface MemoParams {
-  selectedChainAction: ChainAction;
-  depositFormData: FieldValues;
-  bondableAsset: MayaChainPool['asset'];
-  fee?: number | bigint;
+  selectedChainAction: ChainAction
+  depositFormData: FieldValues
+  bondableAsset: MayaChainPool['asset']
+  fee?: number | bigint
 }
 
 export const generateMemo = ({
@@ -18,56 +19,46 @@ export const generateMemo = ({
   depositFormData,
   bondableAsset,
 }: MemoParams): string => {
-  const {
-    nodeAddress,
-    amount,
-    lpUnits,
-    customMemo,
-    percentage,
-    provider,
-    operatorFee,
-  } = extractFormValues(depositFormData);
+  const { nodeAddress, amount, lpUnits, customMemo, provider, operatorFee } =
+    extractFormValues(depositFormData)
 
   return match(selectedChainAction, {
     stake: () => 'd',
     unstake: () => 'w',
-    withdrawPool: () =>
-      `POOL-:${Math.round(shouldBePresent(percentage, 'Percentage')) * 100}:dx:0`,
-    addPool: () => 'POOL+',
     bond_with_lp: () => {
       if (provider) {
         return operatorFee
           ? `BOND:${nodeAddress}:${provider}:${operatorFee}`
-          : `BOND:${nodeAddress}:${provider}`;
+          : `BOND:${nodeAddress}:${provider}`
       }
-      return `BOND:${bondableAsset}:${lpUnits}:${nodeAddress}`;
+      return `BOND:${bondableAsset}:${lpUnits}:${nodeAddress}`
     },
     bond: () => {
       if (provider) {
         return operatorFee
           ? `BOND:${nodeAddress}:${provider}:${operatorFee}`
-          : `BOND:${nodeAddress}:${provider}`;
+          : `BOND:${nodeAddress}:${provider}`
       }
       // If no provider, include only operatorFee (no 'amount' field)
       return operatorFee
         ? `BOND:${nodeAddress}:${operatorFee}`
-        : `BOND:${nodeAddress}`;
+        : `BOND:${nodeAddress}`
     },
     unbond_with_lp: () => `UNBOND:${bondableAsset}:${lpUnits}:${nodeAddress}`,
     unbond: () => {
-      const runeDecimals = chainFeeCoin[Chain.THORChain].decimals;
+      const runeDecimals = chainFeeCoin[Chain.THORChain].decimals
       const amountInUnits = amount
         ? Math.round(amount * Math.pow(10, runeDecimals))
-        : 0;
+        : 0
       return provider
         ? `UNBOND:${nodeAddress}:${amountInUnits}:${provider}`
-        : `UNBOND:${nodeAddress}:${amountInUnits}`;
+        : `UNBOND:${nodeAddress}:${amountInUnits}`
     },
     custom: () => shouldBePresent(customMemo, 'Custom memo'),
-    leave: () => 'LEAVE',
+    leave: () => `LEAVE:${nodeAddress}`,
     vote: () => 'VOTE',
-  });
-};
+  })
+}
 
 function extractFormValues(formData: FieldValues) {
   return {
@@ -79,5 +70,5 @@ function extractFormValues(formData: FieldValues) {
     affiliateFee: formData.affiliateFee as number | null,
     provider: formData.provider as string | null,
     operatorFee: formData.operatorFee as string | null,
-  };
+  }
 }

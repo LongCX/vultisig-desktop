@@ -1,43 +1,48 @@
-import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
+import styled from 'styled-components'
 
-import { horizontalPadding } from '../../../../lib/ui/css/horizontalPadding';
-import { takeWholeSpace } from '../../../../lib/ui/css/takeWholeSpace';
-import { toSizeUnit } from '../../../../lib/ui/css/toSizeUnit';
-import { Spinner } from '../../../../lib/ui/loaders/Spinner';
-import { MatchQuery } from '../../../../lib/ui/query/components/MatchQuery';
-import { text } from '../../../../lib/ui/text';
-import { formatAmount } from '@lib/utils/formatAmount';
-import { useSwapOutputAmountQuery } from '../../queries/useSwapOutputAmountQuery';
-import { useToCoin } from '../../state/toCoin';
-import { AmountContainer } from './AmountContainer';
-import { AmountLabel } from './AmountLabel';
-import { amountConfig } from './config';
-import { SwapFiatAmount } from './SwapFiatAmount';
+import { Skeleton } from '../../../../components/skeleton'
+import { takeWholeSpace } from '../../../../lib/ui/css/takeWholeSpace'
+import { VStack } from '../../../../lib/ui/layout/Stack'
+import { text } from '../../../../lib/ui/text'
+import { useSwapOutputAmountQuery } from '../../queries/useSwapOutputAmountQuery'
+import { useToCoin } from '../../state/toCoin'
+import { AmountContainer } from './AmountContainer'
+import { SwapFiatAmount } from './SwapFiatAmount'
 
 const Value = styled.div`
   ${takeWholeSpace};
-  padding-top: ${toSizeUnit(amountConfig.inputPaddingTop)};
-  ${horizontalPadding(amountConfig.horizontalPadding)}
+  text-align: right;
 
   ${text({
-    weight: 700,
-    size: 20,
-    family: 'mono',
-    color: 'supporting',
+    weight: 500,
+    size: 22,
+    color: 'shy',
     centerVertically: true,
   })}
-`;
+`
 
 export const ToAmount = () => {
-  const query = useSwapOutputAmountQuery();
-  const [toCoin] = useToCoin();
-
-  const { t } = useTranslation();
+  const query = useSwapOutputAmountQuery()
+  const [toCoin] = useToCoin()
 
   return (
-    <AmountContainer>
-      <AmountLabel>{t('to')}</AmountLabel>
+    <AmountContainer gap={6} alignItems="flex-end">
+      <Value>
+        <MatchQuery
+          value={query}
+          pending={() => (
+            <VStack gap={6} alignItems="flex-end">
+              <Skeleton width="100px" height="12px" />
+              <Skeleton width="50px" height="12px" />
+            </VStack>
+          )}
+          error={() => formatTokenAmount(0)}
+          inactive={() => formatTokenAmount(0)}
+          success={value => formatTokenAmount(value)}
+        />
+      </Value>
       <MatchQuery
         value={query}
         pending={() => null}
@@ -46,15 +51,6 @@ export const ToAmount = () => {
           <SwapFiatAmount value={{ amount: value, ...toCoin }} />
         )}
       />
-      <Value>
-        <MatchQuery
-          value={query}
-          pending={() => <Spinner />}
-          error={() => formatAmount(0)}
-          inactive={() => formatAmount(0)}
-          success={value => formatAmount(value)}
-        />
-      </Value>
     </AmountContainer>
-  );
-};
+  )
+}

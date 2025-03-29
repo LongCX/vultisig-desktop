@@ -1,7 +1,7 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
-import { hStack, vStack } from '../../../lib/ui/layout/Stack';
-import { text } from '../../../lib/ui/text';
+import { hStack, vStack } from '../../../lib/ui/layout/Stack'
+import { text } from '../../../lib/ui/text'
 
 export const TxOverviewRow = styled.div`
   ${hStack({
@@ -16,15 +16,8 @@ export const TxOverviewRow = styled.div`
     weight: 600,
     size: 16,
     color: 'contrast',
-    family: 'mono',
   })}
-
-  > *:last-child {
-    ${text({
-      family: 'mono',
-    })}
-  }
-`;
+`
 
 export const TxOverviewPrimaryRowTitle = styled.span`
   ${text({
@@ -32,7 +25,7 @@ export const TxOverviewPrimaryRowTitle = styled.span`
     size: 20,
     color: 'contrast',
   })}
-`;
+`
 
 export const TxOverviewChainDataRow = styled(TxOverviewRow)`
   ${vStack({
@@ -49,7 +42,7 @@ export const TxOverviewChainDataRow = styled(TxOverviewRow)`
     })}
     word-break: break-word;
   }
-`;
+`
 
 export const TxOverviewRowDepositsFlow = styled.div`
   ${hStack({
@@ -64,7 +57,7 @@ export const TxOverviewRowDepositsFlow = styled.div`
     weight: 700,
     size: 16,
   })}
-`;
+`
 
 export const TxOverviewColumn = styled.div`
   ${vStack({
@@ -78,4 +71,4 @@ export const TxOverviewColumn = styled.div`
     weight: 700,
     size: 16,
   })}
-`;
+`

@@ -1,21 +1,18 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
 
-import { VStack } from '../../lib/ui/layout/Stack';
-import { Text } from '../../lib/ui/text';
-import { ProductEnhancedLogo } from '../../ui/logo/ProductEnhancedLogo';
+import { VStack } from '../../lib/ui/layout/Stack'
+import { Text } from '../../lib/ui/text'
+import { ProductEnhancedLogo } from '../../ui/logo/ProductEnhancedLogo'
 
 export const ProductLogoBlock = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <VStack flexGrow alignItems="center" justifyContent="center">
-      <ProductEnhancedLogo style={{ fontSize: 200 }} />
-      <Text color="contrast" weight="700" size={32}>
+      <ProductEnhancedLogo style={{ fontSize: 250 }} />
+      <Text color="contrast" weight="500" size={42}>
         {t('vultisig')}
       </Text>
-      <Text color="contrast" weight="700" size={18}>
-        {t('secure_crypto_vault')}
-      </Text>
     </VStack>
-  );
-};
+  )
+}

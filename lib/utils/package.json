@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
   },
-  "dependencies": {
-    "date-fns": "^4.1.0"
+  "devDependencies": {
+    "vitest": "^3.0.9"
   }
 }

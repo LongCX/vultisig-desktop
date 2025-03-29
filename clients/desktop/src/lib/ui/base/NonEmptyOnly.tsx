@@ -1,15 +1,14 @@
-import { ReactNode } from 'react';
-
-import { ValueProp } from '../props';
+import { ValueProp } from '@lib/ui/props'
+import { ReactNode } from 'react'
 
 type NonEmptyOnlyProps<T> = Partial<ValueProp<T[]>> & {
-  render: (array: T[]) => ReactNode;
-};
+  render: (array: T[]) => ReactNode
+}
 
 export function NonEmptyOnly<T>({ value, render }: NonEmptyOnlyProps<T>) {
   if (value && value.length > 0) {
-    return <>{render(value)}</>;
+    return <>{render(value)}</>
   }
 
-  return null;
+  return null
 }

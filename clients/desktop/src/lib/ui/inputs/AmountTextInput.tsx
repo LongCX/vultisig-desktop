@@ -1,20 +1,20 @@
-import { forwardRef, ReactNode, Ref, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import { ReactNode, useState } from 'react'
+import styled from 'styled-components'
 
-import { borderRadius } from '../css/borderRadius';
-import { centerContent } from '../css/centerContent';
-import { HStack } from '../layout/Stack';
-import { text } from '../text';
-import { TextInput, TextInputProps } from './TextInput';
+import { borderRadius } from '../css/borderRadius'
+import { centerContent } from '../css/centerContent'
+import { HStack } from '../layout/Stack'
+import { text } from '../text'
+import { TextInput, TextInputProps } from './TextInput'
 
 type AmountTextInputProps = Omit<TextInputProps, 'value' | 'onValueChange'> & {
-  value: number | null;
-  onValueChange?: (value: number | null) => void;
-  unit?: ReactNode;
-  shouldBePositive?: boolean;
-  shouldBeInteger?: boolean;
-  suggestion?: ReactNode;
-};
+  value: number | null
+  onValueChange?: (value: number | null) => void
+  unit?: ReactNode
+  shouldBePositive?: boolean
+  shouldBeInteger?: boolean
+  suggestion?: ReactNode
+}
 
 const UnitContainer = styled.div`
   ${borderRadius.s};
@@ -22,63 +22,42 @@ const UnitContainer = styled.div`
   position: absolute;
   left: 12px;
   ${centerContent};
-`;
+`
 
 const Input = styled(TextInput)`
   ${text({
-    family: 'mono',
     size: 16,
+    family: 'mono',
     weight: '400',
   })}
-`;
+`
 
-export const AmountTextInput = forwardRef(function AmountInputInner(
-  {
-    onValueChange,
-    unit,
-    value,
-    shouldBePositive,
-    shouldBeInteger,
-    suggestion,
-    label,
-    placeholder,
-    type = 'number',
-    ...props
-  }: AmountTextInputProps,
-  ref: Ref<HTMLInputElement> | null
-) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const valueAsString = value?.toString() ?? '';
-  const [inputValue, setInputValue] = useState<string>(valueAsString);
-
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (document.activeElement === inputRef.current) {
-        e.preventDefault();
-      }
-    };
-
-    const input = inputRef.current;
-    if (input) {
-      input.addEventListener('wheel', handleWheel);
-    }
-
-    return () => {
-      if (input) {
-        input.removeEventListener('wheel', handleWheel);
-      }
-    };
-  }, []);
+export const AmountTextInput = ({
+  onValueChange,
+  unit,
+  value,
+  shouldBePositive,
+  shouldBeInteger,
+  suggestion,
+  label,
+  placeholder,
+  type = 'number',
+  ref,
+  ...props
+}: AmountTextInputProps) => {
+  const valueAsString = value?.toString() ?? ''
+  const [inputValue, setInputValue] = useState<string>(valueAsString)
 
   return (
     <Input
       {...props}
       style={unit ? { paddingLeft: 36 } : undefined}
       type={type}
+      onWheel={event => event.currentTarget.blur()}
       label={
         <HStack
           alignItems="center"
-          justifyContent="space-between"
+          justifyContent="flex-end"
           gap={16}
           fullWidth
         >
@@ -92,30 +71,30 @@ export const AmountTextInput = forwardRef(function AmountInputInner(
           ? inputValue
           : valueAsString
       }
-      ref={ref || inputRef}
+      ref={ref}
       inputOverlay={unit ? <UnitContainer>{unit}</UnitContainer> : undefined}
       onValueChange={(value: string) => {
         if (shouldBePositive) {
-          value = value.replace(/-/g, '');
+          value = value.replace(/-/g, '')
         }
 
         if (value === '') {
-          setInputValue('');
-          onValueChange?.(null);
-          return;
+          setInputValue('')
+          onValueChange?.(null)
+          return
         }
 
-        const parse = shouldBeInteger ? parseInt : parseFloat;
-        const valueAsNumber = parse(value);
+        const parse = shouldBeInteger ? parseInt : parseFloat
+        const valueAsNumber = parse(value)
         if (isNaN(valueAsNumber)) {
-          return;
+          return
         }
 
         setInputValue(
           valueAsNumber.toString() !== value ? value : valueAsNumber.toString()
-        );
-        onValueChange?.(valueAsNumber);
+        )
+        onValueChange?.(valueAsNumber)
       }}
     />
-  );
-});
+  )
+}

@@ -1,87 +1,102 @@
-import { t } from 'i18next';
-import { useMemo } from 'react';
+import { chainTokens } from '@core/chain/coin/chainTokens'
+import { areEqualCoins, Coin, coinKeyToString } from '@core/chain/coin/Coin'
+import { getCoinSearchString } from '@core/chain/coin/utils/getCoinSearchStrings'
+import { isFeeCoin } from '@core/chain/coin/utils/isFeeCoin'
+import { sortCoinsAlphabetically } from '@core/chain/coin/utils/sortCoinsAlphabetically'
+import { withoutDuplicates } from '@lib/utils/array/withoutDuplicates'
+import { t } from 'i18next'
+import { useCallback, useMemo } from 'react'
 
-import { areEqualCoins, coinKeyToString } from '../../../../../../coin/Coin';
-import { useWhitelistedCoinsQuery } from '../../../../../../coin/query/useWhitelistedCoinsQuery';
-import {
-  getCoinMetaKey,
-  getCoinMetaSearchStrings,
-} from '../../../../../../coin/utils/coinMeta';
-import { VStack } from '../../../../../../lib/ui/layout/Stack';
-import { useCurrentSearch } from '../../../../../../lib/ui/search/CurrentSearchProvider';
-import { useSearchFilter } from '../../../../../../lib/ui/search/hooks/useSearchFilter';
-import { Text } from '../../../../../../lib/ui/text';
-import { withoutDuplicates } from '@lib/utils/array/withoutDuplicates';
-import { useCurrentVaultChain } from '../../../../useCurrentVaultChain';
-import { ManageVaultChainCoin } from '../../ManageVaultChainCoin';
-import { useCoinsForChainCoinOptionsMenu } from './hooks/useCoinsForChainCoinOptionsMenu';
+import { useWhitelistedCoinsQuery } from '../../../../../../coin/query/useWhitelistedCoinsQuery'
+import { NonEmptyOnly } from '../../../../../../lib/ui/base/NonEmptyOnly'
+import { useTransform } from '../../../../../../lib/ui/hooks/useTransform'
+import { VStack } from '../../../../../../lib/ui/layout/Stack'
+import { Spinner } from '../../../../../../lib/ui/loaders/Spinner'
+import { useCurrentSearch } from '../../../../../../lib/ui/search/CurrentSearchProvider'
+import { useSearchFilter } from '../../../../../../lib/ui/search/hooks/useSearchFilter'
+import { Text } from '../../../../../../lib/ui/text'
+import { useCurrentVaultChainCoins } from '../../../../../state/currentVault'
+import { useCurrentVaultChain } from '../../../../useCurrentVaultChain'
+import { ManageVaultChainCoin } from '../../ManageVaultChainCoin'
 
 export const VaultChainCoinOptions = () => {
-  const chain = useCurrentVaultChain();
-  const query = useWhitelistedCoinsQuery(chain);
-  const [searchQuery] = useCurrentSearch();
-  const { selectedCoins, unselectedCoins } =
-    useCoinsForChainCoinOptionsMenu(chain);
+  const chain = useCurrentVaultChain()
+  const query = useWhitelistedCoinsQuery(chain)
+  const [searchQuery] = useCurrentSearch()
+  const selectedCoins = useTransform(
+    useCurrentVaultChainCoins(chain),
+    useCallback(coins => coins.filter(coin => !isFeeCoin(coin)), [])
+  )
 
-  const initialItems = useMemo(() => {
-    const suggestedItems = [...unselectedCoins];
+  const allItems = useMemo(() => {
+    let result: Coin[] = []
 
-    return withoutDuplicates(suggestedItems, (one, another) =>
-      areEqualCoins(getCoinMetaKey(one), getCoinMetaKey(another))
-    ).filter(({ isNativeToken }) => !isNativeToken);
-  }, [unselectedCoins]);
+    const tokens = chainTokens[chain]
 
-  const allUniqueItems = useMemo(() => {
-    return withoutDuplicates(
-      [...initialItems, ...(query.data ?? [])],
-      (one, another) =>
-        areEqualCoins(getCoinMetaKey(one), getCoinMetaKey(another))
-    );
-  }, [initialItems, query.data]);
+    if (tokens) {
+      result.push(...tokens)
+    }
 
-  const options = useSearchFilter({
-    searchQuery,
-    items: searchQuery ? allUniqueItems : initialItems,
-    getSearchStrings: getCoinMetaSearchStrings,
-  });
+    if (query.data) {
+      result.push(...query.data)
+    }
 
-  const sortedOptions = useMemo(() => {
-    return options.sort((a, b) => a.ticker.localeCompare(b.ticker));
-  }, [options]);
+    result = result.filter(
+      coin =>
+        !selectedCoins.some(selectedCoin => areEqualCoins(selectedCoin, coin))
+    )
+
+    return withoutDuplicates(result, areEqualCoins)
+  }, [chain, query.data, selectedCoins])
+
+  const options = useTransform(
+    useSearchFilter({
+      searchQuery,
+      items: allItems,
+      getSearchStrings: getCoinSearchString,
+    }),
+    sortCoinsAlphabetically
+  )
 
   return (
     <>
-      {selectedCoins.length > 0 && (
-        <>
-          <Text size={18} color="shy">
-            {t('selected').toUpperCase()}
-          </Text>
-          {selectedCoins.map(option => (
-            <ManageVaultChainCoin
-              key={coinKeyToString(getCoinMetaKey(option))}
-              value={option}
-            />
-          ))}
-        </>
-      )}
-      {sortedOptions.length > 0 && (
-        <>
-          <Text size={18} color="shy">
-            {t('tokens').toUpperCase()}
-          </Text>
-          {sortedOptions.map(option => (
-            <ManageVaultChainCoin
-              key={coinKeyToString(getCoinMetaKey(option))}
-              value={option}
-            />
-          ))}
-        </>
-      )}
+      <NonEmptyOnly
+        value={selectedCoins}
+        render={coins => (
+          <>
+            <Text size={18} color="shy">
+              {t('selected').toUpperCase()}
+            </Text>
+            {coins.map(option => (
+              <ManageVaultChainCoin
+                key={coinKeyToString(option)}
+                value={option}
+              />
+            ))}
+          </>
+        )}
+      />
+      <NonEmptyOnly
+        value={options}
+        render={coins => (
+          <>
+            <Text size={18} color="shy">
+              {t('tokens').toUpperCase()}
+            </Text>
+            {coins.map(option => (
+              <ManageVaultChainCoin
+                key={coinKeyToString(option)}
+                value={option}
+              />
+            ))}
+          </>
+        )}
+      />
       {searchQuery && query.isPending && (
         <VStack fullWidth alignItems="center">
-          <Text>Searching ...</Text>
+          <Spinner size="2em" />
         </VStack>
       )}
     </>
-  );
-};
+  )
+}

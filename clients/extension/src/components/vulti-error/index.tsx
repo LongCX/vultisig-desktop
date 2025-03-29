@@ -1,19 +1,16 @@
-import { FC } from "react";
-import { useTranslation } from "react-i18next";
-import { Button } from "antd";
-
-import messageKeys from "../../utils/message-keys";
-
-import { TriangleWarning } from "../../icons";
+import { TriangleWarning } from '@clients/extension/src/icons'
+import { Button } from 'antd'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface ComponentProps {
-  onClose: () => void;
-  description: string;
-  title: string;
+  onClose: () => void
+  description: string
+  title: string
 }
 
 const Component: FC<ComponentProps> = ({ onClose, description, title }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <>
@@ -21,7 +18,7 @@ const Component: FC<ComponentProps> = ({ onClose, description, title }) => {
         <div className="vulti-error">
           <span className="badge">
             <TriangleWarning />
-            {t(messageKeys.ERROR)}
+            {t('error')}
           </span>
           <span className="title">{title}</span>
           <span className="description">{description}</span>
@@ -30,11 +27,11 @@ const Component: FC<ComponentProps> = ({ onClose, description, title }) => {
 
       <div className="footer">
         <Button onClick={onClose} type="default" shape="round" block>
-          {t(messageKeys.CLOSE)}
+          {t('close')}
         </Button>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default Component;
+export default Component

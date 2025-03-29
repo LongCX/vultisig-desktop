@@ -1,9 +1,52 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle } from 'styled-components'
 
-import { getColor } from '../theme/getters';
-import { themedScrollbars } from './themedScrollbars';
+import { getColor } from '../theme/getters'
+import { themedScrollbars } from './themedScrollbars'
 
 export const GlobalStyle = createGlobalStyle`
+   @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-SemiBold.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-RegularItalic.otf') format('opentype');
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  @font-face {
+    font-family: 'Brockmann';
+    src: url('/fonts/Brockmann-BoldItalic.otf') format('opentype');
+    font-weight: 700;
+    font-style: italic;
+  }
+
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
@@ -18,11 +61,16 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   body {
+    font-family: 'Brockmann', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   
   img, picture, video, canvas, svg {
     max-width: 100%;
+  }
+  
+  input {
+    border: none;
   }
 
   svg {
@@ -58,4 +106,4 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   ${themedScrollbars}
-`;
+`

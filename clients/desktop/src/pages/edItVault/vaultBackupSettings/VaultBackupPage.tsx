@@ -1,45 +1,47 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { FieldValues, useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useInvalidateQueries } from '@lib/ui/query/hooks/useInvalidateQueries'
+import { useMemo, useState } from 'react'
+import { FieldValues, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../../lib/ui/buttons/Button';
-import { EyeIcon } from '../../../lib/ui/icons/EyeIcon';
-import InfoGradientIcon from '../../../lib/ui/icons/InfoGradientIcon';
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { useInvalidateQueries } from '../../../lib/ui/query/hooks/useInvalidateQueries';
-import { GradientText, Text } from '../../../lib/ui/text';
-import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { PageSlice } from '../../../ui/page/PageSlice';
-import { useBackupVaultMutation } from '../../../vault/mutations/useBackupVaultMutation';
-import { vaultsQueryKey } from '../../../vault/queries/useVaultsQuery';
-import { useCurrentVault } from '../../../vault/state/currentVault';
+import { Button } from '../../../lib/ui/buttons/Button'
+import { EyeIcon } from '../../../lib/ui/icons/EyeIcon'
+import InfoGradientIcon from '../../../lib/ui/icons/InfoGradientIcon'
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { GradientText, Text } from '../../../lib/ui/text'
+import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { PageSlice } from '../../../ui/page/PageSlice'
+import { useBackupVaultMutation } from '../../../vault/mutations/useBackupVaultMutation'
+import { vaultsQueryKey } from '../../../vault/queries/useVaultsQuery'
 import {
+  createVaultBackupSchema,
   VaultBackupSchema,
-  vaultBackupSchema,
-} from './schemas/vaultBackupSchema';
+} from '../../../vault/setup/shared/vaultBackupSettings/schemas/vaultBackupSchema'
+import { useCurrentVault } from '../../../vault/state/currentVault'
 import {
   ActionsWrapper,
   IconButton,
   InfoPill,
   InputField,
   InputFieldWrapper,
-} from './VaultBackupPage.styles';
+} from './VaultBackupPage.styles'
 
 const VaultBackupPage = () => {
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isVerifiedPasswordVisible, setIsVerifiedPasswordVisible] =
-    useState(false);
+    useState(false)
 
-  const vault = useCurrentVault();
-  const navigate = useAppNavigate();
-  const { t } = useTranslation();
-  const invalidateQueries = useInvalidateQueries();
+  const vault = useCurrentVault()
+  const navigate = useAppNavigate()
+  const { t } = useTranslation()
+  const invalidateQueries = useInvalidateQueries()
 
-  const { mutate: backupVault, isPending, error } = useBackupVaultMutation();
+  const { mutate: backupVault, isPending, error } = useBackupVaultMutation()
+
+  const vaultBackupSchema = useMemo(() => createVaultBackupSchema(t), [t])
 
   const {
     register,
@@ -48,30 +50,27 @@ const VaultBackupPage = () => {
   } = useForm<VaultBackupSchema>({
     resolver: zodResolver(vaultBackupSchema),
     mode: 'onBlur',
-  });
+  })
 
   const onSubmit = async (data?: FieldValues) => {
-    const password = data?.password;
-    if (!vault) return;
+    const password = data?.password
 
     backupVault(
       { vault, password },
       {
         onSuccess: () => {
-          invalidateQueries(vaultsQueryKey);
-          navigate('vault');
+          invalidateQueries(vaultsQueryKey)
+          navigate('vault')
         },
       }
-    );
-  };
+    )
+  }
 
   return (
     <VStack flexGrow gap={16}>
       <PageHeader
         primaryControls={<PageHeaderBackButton />}
-        title={
-          <PageHeaderTitle>{t('vault_backup_page_title')}</PageHeaderTitle>
-        }
+        title={<PageHeaderTitle>{t('backup')}</PageHeaderTitle>}
       />
       <PageSlice gap={16} flexGrow={true}>
         <Text size={16} color="contrast" weight="600">
@@ -103,7 +102,7 @@ const VaultBackupPage = () => {
               {errors.password?.message && (
                 <Text size={12} color="danger">
                   {typeof errors.password.message === 'string' &&
-                    t(errors.password.message)}
+                    errors.password.message}
                 </Text>
               )}
             </div>
@@ -129,7 +128,7 @@ const VaultBackupPage = () => {
                 <Text size={12} color="danger">
                   {' '}
                   {typeof errors.verifiedPassword.message === 'string' &&
-                    t(errors.verifiedPassword.message)}
+                    errors.verifiedPassword.message}
                 </Text>
               )}
             </div>
@@ -145,11 +144,9 @@ const VaultBackupPage = () => {
               isDisabled={!isValid || !isDirty || isPending}
               type="submit"
             >
-              {t(
-                isPending
-                  ? 'vault_backup_page_submit_loading_button_text'
-                  : 'vault_backup_page_submit_button_text'
-              )}
+              {isPending
+                ? t('vault_backup_page_submit_loading_button_text')
+                : t('save')}
             </Button>
             <Button
               disabled={isPending}
@@ -170,7 +167,7 @@ const VaultBackupPage = () => {
         </VStack>
       </PageSlice>
     </VStack>
-  );
-};
+  )
+}
 
-export default VaultBackupPage;
+export default VaultBackupPage

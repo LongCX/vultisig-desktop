@@ -1,12 +1,12 @@
 export async function chainPromises<T>(
-  iterable: Iterable<Promise<T> | T>
+  generators: Iterable<() => Promise<T>>
 ): Promise<T[]> {
-  const results: T[] = [];
+  const results: T[] = []
 
-  for (const item of iterable) {
-    const result = await item;
-    results.push(result);
+  for (const generator of generators) {
+    const result = await generator()
+    results.push(result)
   }
 
-  return results;
+  return results
 }

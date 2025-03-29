@@ -1,23 +1,24 @@
-import { sum } from '@lib/utils/array/sum';
-import { formatAmount } from '@lib/utils/formatAmount';
-import styled from 'styled-components';
+import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
+import { getCoinValue } from '@core/chain/coin/utils/getCoinValue'
+import { sum } from '@lib/utils/array/sum'
+import { formatAmount } from '@lib/utils/formatAmount'
+import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
+import styled from 'styled-components'
 
-import { ChainEntityIcon } from '../../chain/ui/ChainEntityIcon';
-import { fromChainAmount } from '../../chain/utils/fromChainAmount';
-import { getChainEntityIconSrc } from '../../chain/utils/getChainEntityIconSrc';
-import { getCoinValue } from '../../coin/utils/getCoinValue';
-import { centerContent } from '../../lib/ui/css/centerContent';
-import { horizontalPadding } from '../../lib/ui/css/horizontalPadding';
-import { round } from '../../lib/ui/css/round';
-import { HStack, VStack } from '../../lib/ui/layout/Stack';
-import { Panel } from '../../lib/ui/panel/Panel';
-import { Text } from '../../lib/ui/text';
-import { getColor } from '../../lib/ui/theme/getters';
-import { useFiatCurrency } from '../../preferences/state/fiatCurrency';
-import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware';
-import { VaultChainBalance } from '../queries/useVaultChainsBalancesQuery';
-import { useCurrentVaultAddreses } from '../state/currentVault';
-import { useHandleVaultChainItemPress } from './useHandleVaultChainItemPress';
+import { ChainEntityIcon } from '../../chain/ui/ChainEntityIcon'
+import { getChainEntityIconSrc } from '../../chain/utils/getChainEntityIconSrc'
+import { centerContent } from '../../lib/ui/css/centerContent'
+import { horizontalPadding } from '../../lib/ui/css/horizontalPadding'
+import { round } from '../../lib/ui/css/round'
+import { HStack, VStack } from '../../lib/ui/layout/Stack'
+import { Panel } from '../../lib/ui/panel/Panel'
+import { Text } from '../../lib/ui/text'
+import { getColor } from '../../lib/ui/theme/getters'
+import { useFiatCurrency } from '../../preferences/state/fiatCurrency'
+import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware'
+import { VaultChainBalance } from '../queries/useVaultChainsBalancesQuery'
+import { useCurrentVaultAddreses } from '../state/currentVault'
+import { useHandleVaultChainItemPress } from './useHandleVaultChainItemPress'
 
 const Pill = styled.div`
   height: 24px;
@@ -26,25 +27,25 @@ const Pill = styled.div`
   font-size: 12px;
   ${centerContent};
   background: ${getColor('mist')};
-`;
+`
 
 type VaultChainItemProps = {
-  vault: VaultChainBalance;
-};
+  balance: VaultChainBalance
+}
 
-export const VaultChainItem = ({ vault }: VaultChainItemProps) => {
-  const { chain, coins } = vault;
-  const [fiatCurrency] = useFiatCurrency();
+export const VaultChainItem = ({ balance }: VaultChainItemProps) => {
+  const { chain, coins } = balance
+  const [fiatCurrency] = useFiatCurrency()
 
-  const addresses = useCurrentVaultAddreses();
-  const address = addresses[chain];
+  const addresses = useCurrentVaultAddreses()
+  const address = addresses[chain]
 
   const pressHandlers = useHandleVaultChainItemPress({
     chain,
     address,
-  });
+  })
 
-  const singleCoin = coins.length === 1 ? coins[0] : null;
+  const singleCoin = coins.length === 1 ? coins[0] : null
 
   const totalAmount = sum(
     coins.map(coin =>
@@ -54,10 +55,10 @@ export const VaultChainItem = ({ vault }: VaultChainItemProps) => {
         decimals: coin.decimals,
       })
     )
-  );
+  )
 
   return (
-    <Panel data-testid="VaultChainItem-Panel" {...pressHandlers}>
+    <StyledPanel data-testid="VaultChainItem-Panel" {...pressHandlers}>
       <HStack fullWidth alignItems="center" gap={16}>
         <ChainEntityIcon
           value={getChainEntityIconSrc(chain)}
@@ -78,7 +79,7 @@ export const VaultChainItem = ({ vault }: VaultChainItemProps) => {
               {singleCoin ? (
                 <Text color="contrast" weight="400" size={12} centerVertically>
                   <BalanceVisibilityAware>
-                    {formatAmount(
+                    {formatTokenAmount(
                       fromChainAmount(singleCoin.amount, singleCoin.decimals)
                     )}
                   </BalanceVisibilityAware>
@@ -104,6 +105,12 @@ export const VaultChainItem = ({ vault }: VaultChainItemProps) => {
           </Text>
         </VStack>
       </HStack>
-    </Panel>
-  );
-};
+    </StyledPanel>
+  )
+}
+
+const StyledPanel = styled(Panel)`
+  &:hover {
+    background-color: ${getColor('foregroundExtra')};
+  }
+`

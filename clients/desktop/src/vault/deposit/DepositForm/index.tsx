@@ -1,48 +1,48 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { FC } from 'react';
-import { FieldValues, useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
+import { Chain } from '@core/chain/Chain'
+import { useAssertWalletCore } from '@core/ui/chain/providers/WalletCoreProvider'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { FC } from 'react'
+import { FieldValues, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
-import { Opener } from '../../../lib/ui/base/Opener';
-import { Button } from '../../../lib/ui/buttons/Button';
-import { ChevronRightIcon } from '../../../lib/ui/icons/ChevronRightIcon';
-import { IconWrapper } from '../../../lib/ui/icons/IconWrapper';
-import { InputContainer } from '../../../lib/ui/inputs/InputContainer';
-import { HStack, VStack } from '../../../lib/ui/layout/Stack';
-import { Text } from '../../../lib/ui/text';
-import { Chain } from '../../../model/chain';
-import { useAssertWalletCore } from '../../../providers/WalletCoreProvider';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator';
-import { ChainAction } from '../ChainAction';
-import { useGetTotalAmountAvailableForChain } from '../hooks/useGetAmountTotalBalance';
-import { useGetMayaChainBondableAssetsQuery } from '../hooks/useGetMayaChainBondableAssetsQuery';
+import { Opener } from '../../../lib/ui/base/Opener'
+import { Button } from '../../../lib/ui/buttons/Button'
+import { ChevronRightIcon } from '../../../lib/ui/icons/ChevronRightIcon'
+import { IconWrapper } from '../../../lib/ui/icons/IconWrapper'
+import { InputContainer } from '../../../lib/ui/inputs/InputContainer'
+import { HStack, VStack } from '../../../lib/ui/layout/Stack'
+import { Text } from '../../../lib/ui/text'
+import { useAppPathParams } from '../../../navigation/hooks/useAppPathParams'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator'
+import { ChainAction } from '../ChainAction'
+import { useGetTotalAmountAvailableForChain } from '../hooks/useGetAmountTotalBalance'
+import { useGetMayaChainBondableAssetsQuery } from '../hooks/useGetMayaChainBondableAssetsQuery'
 import {
   getChainActionSchema,
   getFieldsForChainAction,
   resolveSchema,
-} from '../utils/schema';
-import { DISABLED_FIELDS_NAMES } from './chainOptionsConfig';
-import { DepositActionItemExplorer } from './DepositActionItemExplorer';
+} from '../utils/schema'
+import { DepositActionItemExplorer } from './DepositActionItemExplorer'
 import {
   AssetRequiredLabel,
   Container,
   ErrorText,
   InputFieldWrapper,
-} from './DepositForm.styled';
-import { MayaChainAssetExplorer } from './MayaChainAssetExplorer';
+} from './DepositForm.styled'
+import { MayaChainAssetExplorer } from './MayaChainAssetExplorer'
 
-type FormData = Record<string, any>;
+type FormData = Record<string, any>
 type DepositFormProps = {
-  onSubmit: (data: FieldValues, selectedChainAction: ChainAction) => void;
-  selectedChainAction: ChainAction;
-  onSelectChainAction: (action: ChainAction) => void;
-  chainActionOptions: string[];
-  chain: Chain;
-};
+  onSubmit: (data: FieldValues, selectedChainAction: ChainAction) => void
+  selectedChainAction: ChainAction
+  onSelectChainAction: (action: ChainAction) => void
+  chainActionOptions: ChainAction[]
+  chain: Chain
+}
 
 export const DepositForm: FC<DepositFormProps> = ({
   onSubmit,
@@ -51,22 +51,28 @@ export const DepositForm: FC<DepositFormProps> = ({
   chainActionOptions,
   chain,
 }) => {
-  const { data: bondableAssets = [] } = useGetMayaChainBondableAssetsQuery();
-  const walletCore = useAssertWalletCore();
-  const { t } = useTranslation();
-  const totalAmountAvailable = useGetTotalAmountAvailableForChain(chain);
-  const chainActionSchema = getChainActionSchema(chain, selectedChainAction);
+  const { data: bondableAssets = [] } = useGetMayaChainBondableAssetsQuery()
+  const walletCore = useAssertWalletCore()
+  const { t } = useTranslation()
+  const { data: totalAmountAvailableForChainData } =
+    useGetTotalAmountAvailableForChain(chain)
+  const totalTokenAmount =
+    totalAmountAvailableForChainData?.totalTokenAmount ?? 0
+  const chainActionSchema = getChainActionSchema(chain, selectedChainAction, t)
   const fieldsForChainAction = getFieldsForChainAction(
     chain,
-    selectedChainAction
-  );
+    selectedChainAction,
+    t
+  )
+  const [{ coin: chainCoinString }] = useAppPathParams<'deposit'>()
+  const coin = chainCoinString.split(':')[1]
 
   const schemaForChainAction = resolveSchema(
     chainActionSchema,
     chain,
     walletCore,
-    totalAmountAvailable
-  );
+    totalTokenAmount
+  )
 
   const {
     register,
@@ -79,14 +85,15 @@ export const DepositForm: FC<DepositFormProps> = ({
     resolver: schemaForChainAction
       ? zodResolver(schemaForChainAction)
       : undefined,
-    mode: 'onBlur',
-  });
+    mode: 'onSubmit',
+  })
 
   const handleFormSubmit = (data: FieldValues) => {
-    onSubmit(data, selectedChainAction as ChainAction);
-  };
+    onSubmit(data, selectedChainAction as ChainAction)
+  }
 
-  const selectedBondableAsset = getValues('bondableAsset');
+  const selectedBondableAsset = getValues('bondableAsset')
+
   return (
     <>
       <PageHeader
@@ -134,8 +141,7 @@ export const DepositForm: FC<DepositFormProps> = ({
                   <Container onClick={onOpen}>
                     <HStack alignItems="center" gap={4}>
                       <Text weight="400" family="mono" size={16}>
-                        {selectedBondableAsset ||
-                          t('chainFunctions.bond_with_lp.labels.bondableAsset')}
+                        {selectedBondableAsset || t('asset')}
                       </Text>
                       {!selectedBondableAsset && (
                         <AssetRequiredLabel as="span" color="danger" size={14}>
@@ -155,8 +161,8 @@ export const DepositForm: FC<DepositFormProps> = ({
                     onOptionClick={selectedAsset => {
                       setValue('bondableAsset', selectedAsset, {
                         shouldValidate: true,
-                      });
-                      onClose();
+                      })
+                      onClose()
                     }}
                     options={bondableAssets}
                   />
@@ -165,49 +171,48 @@ export const DepositForm: FC<DepositFormProps> = ({
             )}
           {selectedChainAction && fieldsForChainAction.length > 0 && (
             <VStack gap={12}>
-              {fieldsForChainAction
-                .filter(field => !DISABLED_FIELDS_NAMES.includes(field.name))
-                .map(field => (
-                  <InputContainer key={field.name}>
-                    <Text size={15} weight="400">
-                      {t(
-                        `chainFunctions.${selectedChainAction}.labels.${field.name}`
-                      )}{' '}
-                      {field.required ? (
-                        <Text as="span" color="danger" size={14}>
-                          *
-                        </Text>
-                      ) : (
-                        <Text as="span" size={14}>
-                          ({t('chainFunctions.optional_validation')})
-                        </Text>
-                      )}
-                    </Text>
-                    <InputFieldWrapper
-                      as="input"
-                      onWheel={e => e.currentTarget.blur()}
-                      type={field.type}
-                      step="0.01"
-                      min={0}
-                      {...register(field.name)}
-                      required={field.required}
-                    />
-                    {errors[field.name] && (
-                      <ErrorText color="danger" size={13} className="error">
-                        {t(errors[field.name]?.message as string, {
-                          defaultValue: t('chainFunctions.default_validation'),
-                        })}
-                      </ErrorText>
+              {fieldsForChainAction.map(field => (
+                <InputContainer key={field.name}>
+                  <Text size={15} weight="400">
+                    {field.label}{' '}
+                    {field.name === 'amount' &&
+                      selectedChainAction === 'bond' &&
+                      `(Balance: ${totalTokenAmount.toFixed(2)} ${coin}) `}
+                    {field.required ? (
+                      <Text as="span" color="danger" size={14}>
+                        *
+                      </Text>
+                    ) : (
+                      <Text as="span" size={14}>
+                        ({t('chainFunctions.optional_validation')})
+                      </Text>
                     )}
-                  </InputContainer>
-                ))}
+                  </Text>
+                  <InputFieldWrapper
+                    as="input"
+                    onWheel={e => e.currentTarget.blur()}
+                    type={field.type}
+                    step="0.01"
+                    min={0}
+                    {...register(field.name)}
+                    required={field.required}
+                  />
+                  {errors[field.name] && (
+                    <ErrorText color="danger" size={13} className="error">
+                      {t(errors[field.name]?.message as string, {
+                        defaultValue: t('chainFunctions.default_validation'),
+                      })}
+                    </ErrorText>
+                  )}
+                </InputContainer>
+              ))}
             </VStack>
           )}
         </WithProgressIndicator>
-        <Button type="submit" disabled={!isValid}>
+        <Button type="submit" isDisabled={!isValid}>
           {t('continue')}
         </Button>
       </PageContent>
     </>
-  );
-};
+  )
+}

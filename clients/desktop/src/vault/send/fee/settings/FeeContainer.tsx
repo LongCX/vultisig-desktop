@@ -1,13 +1,15 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
-import { textInputFrame } from '../../../../lib/ui/css/textInput';
-import { hStack } from '../../../../lib/ui/layout/Stack';
-import { text } from '../../../../lib/ui/text';
-import { getColor } from '../../../../lib/ui/theme/getters';
+import {
+  textInputBackground,
+  textInputFrame,
+} from '../../../../lib/ui/css/textInput'
+import { hStack } from '../../../../lib/ui/layout/Stack'
+import { text } from '../../../../lib/ui/text'
 
 export const FeeContainer = styled.div`
   ${textInputFrame};
-  background: ${getColor('foreground')};
+  ${textInputBackground};
 
   ${text({
     color: 'supporting',
@@ -18,4 +20,4 @@ export const FeeContainer = styled.div`
     alignItems: 'center',
     justifyContent: 'space-between',
   })}
-`;
+`

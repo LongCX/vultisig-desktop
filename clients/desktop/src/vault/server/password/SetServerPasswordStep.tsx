@@ -1,65 +1,64 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
-import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { OnBackProp, OnForwardProp } from '@lib/ui/props'
+import type { TFunction } from 'i18next'
+import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
+import styled from 'styled-components'
+import { z } from 'zod'
 
-import { Button } from '../../../lib/ui/buttons/Button';
-import { PasswordInput } from '../../../lib/ui/inputs/PasswordInput';
-import { VStack } from '../../../lib/ui/layout/Stack';
-import { OnBackProp, OnForwardProp } from '../../../lib/ui/props';
-import { WarningBlock } from '../../../lib/ui/status/WarningBlock';
-import { Text } from '../../../lib/ui/text';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { KeygenEducationPrompt } from '../../keygen/shared/KeygenEducationPrompt';
-import { useVaultPassword } from './state/password';
+import { Button } from '../../../lib/ui/buttons/Button'
+import { InfoIcon } from '../../../lib/ui/icons/InfoIcon'
+import { PasswordInput } from '../../../lib/ui/inputs/PasswordInput'
+import { VStack } from '../../../lib/ui/layout/Stack'
+import { WarningBlock } from '../../../lib/ui/status/WarningBlock'
+import { Text } from '../../../lib/ui/text'
+import { getColor } from '../../../lib/ui/theme/getters'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { KeygenEducationPrompt } from '../../keygen/shared/KeygenEducationPrompt'
+import { useVaultPassword } from './state/password'
 
-const PasswordWarningBlock = styled(WarningBlock)`
-  max-width: max-content;
-  font-size: 13px;
-`;
+const getPasswordSchema = (t: TFunction) =>
+  z
+    .object({
+      password: z.string().min(1, t('password_required')),
+      confirmPassword: z
+        .string()
+        .min(1, t('fastVaultSetup.confirmPasswordIsRequired')),
+    })
+    .refine(data => data.password === data.confirmPassword, {
+      message: t('fastVaultSetup.passwordDoNotMatch'),
+      path: ['confirmPassword'],
+    })
 
-const passwordSchema = z
-  .object({
-    password: z.string().min(1, 'passwordRequired'),
-    confirmPassword: z
-      .string()
-      .min(1, 'fastVaultSetup.confirmPasswordIsRequired'),
-  })
-  .refine(data => data.password === data.confirmPassword, {
-    message: 'fastVaultSetup.passwordDoNotMatch',
-    path: ['confirmPassword'],
-  });
-
-type PasswordSchema = z.infer<typeof passwordSchema>;
+type PasswordSchema = z.infer<ReturnType<typeof getPasswordSchema>>
 
 export const SetServerPasswordStep = ({
   onForward,
   onBack,
 }: OnForwardProp & Partial<OnBackProp>) => {
-  const { t } = useTranslation();
-  const [storedPassword, setStoredPassword] = useVaultPassword();
+  const { t } = useTranslation()
+  const [storedPassword, setStoredPassword] = useVaultPassword()
 
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors, isValid },
-  } = useForm({
-    resolver: zodResolver(passwordSchema),
-    mode: 'onBlur',
+  } = useForm<PasswordSchema>({
+    resolver: zodResolver(getPasswordSchema(t)),
+    mode: 'all',
     defaultValues: {
       password: storedPassword || '',
       confirmPassword: '',
     },
-  });
+  })
 
   const onSubmit = (data: PasswordSchema) => {
-    setStoredPassword(data.password);
-    onForward();
-  };
+    setStoredPassword(data.password)
+    onForward()
+  }
 
   return (
     <>
@@ -70,8 +69,24 @@ export const SetServerPasswordStep = ({
       <PageContent as="form" onSubmit={handleSubmit(onSubmit)}>
         <VStack flexGrow gap={16}>
           <VStack gap={8}>
-            <Text variant="h1Regular">{t('password')}</Text>
-            <PasswordWarningBlock>
+            <Text variant="h1Regular">{t('vultiserver_password')}</Text>
+            <PasswordWarningBlock
+              iconTooltipContent={
+                <TooltipWrapper>
+                  <Text color="reversed" size={16}>
+                    {t('moreInfo')}
+                  </Text>
+                  <Text size={13} color="shy">
+                    {t('secureVaultSetupPasswordTooltipContent')}
+                  </Text>
+                </TooltipWrapper>
+              }
+              icon={() => (
+                <IconWrapper>
+                  <InfoIcon />
+                </IconWrapper>
+              )}
+            >
               {t('fastVaultSetup.passwordCannotBeRecovered')}
             </PasswordWarningBlock>
           </VStack>
@@ -79,14 +94,14 @@ export const SetServerPasswordStep = ({
             <VStack gap={4}>
               <PasswordInput
                 {...register('password')}
-                validationState={
+                validation={
                   isValid ? 'valid' : errors.password ? 'invalid' : undefined
                 }
                 placeholder={t('enter_password')}
                 onValueChange={value => setValue('password', value)}
                 autoFocus
               />
-              {errors.password && (
+              {errors.password && errors.password?.message && (
                 <Text color="danger" size={12}>
                   {errors.password.message}
                 </Text>
@@ -95,7 +110,7 @@ export const SetServerPasswordStep = ({
             <VStack gap={4}>
               <PasswordInput
                 {...register('confirmPassword')}
-                validationState={
+                validation={
                   isValid
                     ? 'valid'
                     : errors.confirmPassword
@@ -107,16 +122,31 @@ export const SetServerPasswordStep = ({
               />
               {errors.confirmPassword && errors.confirmPassword.message && (
                 <Text color="danger" size={12}>
-                  {t(errors.confirmPassword.message)}
+                  {errors.confirmPassword.message}
                 </Text>
               )}
             </VStack>
           </VStack>
         </VStack>
-        <Button type="submit" isDisabled={Boolean(errors)}>
+        <Button kind="primary" type="submit" isDisabled={!isValid}>
           {t('next')}
         </Button>
       </PageContent>
     </>
-  );
-};
+  )
+}
+
+const PasswordWarningBlock = styled(WarningBlock)`
+  font-size: 13px;
+  max-width: fit-content;
+`
+
+const IconWrapper = styled.div`
+  font-size: 16px;
+  color: ${getColor('idle')};
+`
+
+const TooltipWrapper = styled.div`
+  background-color: ${getColor('white')};
+  color: ${getColor('text')};
+`

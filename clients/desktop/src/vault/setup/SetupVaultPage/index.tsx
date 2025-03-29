@@ -1,24 +1,25 @@
-import { match } from '@lib/utils/match';
-import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import styled, { useTheme } from 'styled-components';
+import { match } from '@lib/utils/match'
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import styled, { useTheme } from 'styled-components'
 
-import { getFormProps } from '../../../lib/ui/form/utils/getFormProps';
-import { CheckIcon } from '../../../lib/ui/icons/CheckIcon';
-import { LightningGradientIcon } from '../../../lib/ui/icons/LightningGradientIcon';
-import { LightningIcon } from '../../../lib/ui/icons/LightningIcon';
-import ShieldCheckIcon from '../../../lib/ui/icons/ShieldCheckIcon';
-import { HStack } from '../../../lib/ui/layout/Stack';
-import { GradientText, Text } from '../../../lib/ui/text';
-import { ToggleSwitch } from '../../../lib/ui/toggle-switch/ToggleSwitch';
-import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate';
-import { PageContent } from '../../../ui/page/PageContent';
-import { PageHeader } from '../../../ui/page/PageHeader';
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton';
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle';
-import { getSetupVaultProperties } from '../type/SetupVaultType';
-import { useSetupVaultType } from '../type/state/setupVaultType';
+import { Match } from '../../../lib/ui/base/Match'
+import { getFormProps } from '../../../lib/ui/form/utils/getFormProps'
+import { CheckIcon } from '../../../lib/ui/icons/CheckIcon'
+import { LightningGradientIcon } from '../../../lib/ui/icons/LightningGradientIcon'
+import { LightningIcon } from '../../../lib/ui/icons/LightningIcon'
+import ShieldCheckIcon from '../../../lib/ui/icons/ShieldCheckIcon'
+import { HStack, VStack } from '../../../lib/ui/layout/Stack'
+import { GradientText, Text } from '../../../lib/ui/text'
+import { ToggleSwitch } from '../../../lib/ui/toggle-switch/ToggleSwitch'
+import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate'
+import { PageContent } from '../../../ui/page/PageContent'
+import { PageHeader } from '../../../ui/page/PageHeader'
+import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
+import { getSetupVaultProperties } from '../type/SetupVaultType'
+import { useSetupVaultType } from '../type/state/setupVaultType'
+import { useSetupVaultPageAnimation } from './hooks/useSetupVaultPageAnimation'
 import {
   ArtContainer,
   ConfirmButton,
@@ -27,27 +28,15 @@ import {
   DescriptionTitleWrapper,
   DescriptionWrapper,
   IconWrapper,
-} from './SetupVaultPage.styled';
-
-const STATE_MACHINE_NAME = 'State Machine 1';
-const STATE_INPUT_NAME = 'Switch';
+} from './SetupVaultPage.styled'
 
 export const SetupVaultPage = () => {
-  const { t } = useTranslation();
-  const [value, setValue] = useSetupVaultType();
-  const navigate = useAppNavigate();
-  const theme = useTheme();
-  const { RiveComponent, rive } = useRive({
-    src: '/rive-animations/choose-vault.riv',
-    autoplay: true,
-    stateMachines: [STATE_MACHINE_NAME],
-  });
-
-  const stateMachineInput = useStateMachineInput(
-    rive,
-    STATE_MACHINE_NAME,
-    STATE_INPUT_NAME
-  );
+  const { RiveComponent, stateMachineInput, isPlaying, onPlay } =
+    useSetupVaultPageAnimation()
+  const { t } = useTranslation()
+  const [value, setValue] = useSetupVaultType()
+  const navigate = useAppNavigate()
+  const theme = useTheme()
 
   const onStart = useCallback(() => {
     navigate(
@@ -55,8 +44,8 @@ export const SetupVaultPage = () => {
         fast: () => 'setupFastVault',
         secure: () => 'setupSecureVault',
       })
-    );
-  }, [navigate, value]);
+    )
+  }, [navigate, value])
 
   return (
     <>
@@ -86,13 +75,18 @@ export const SetupVaultPage = () => {
                   label: 'Secure',
                   value: 'secure',
                   icon: (
-                    <ShieldCheckIcon
-                      color={
-                        value === 'fast'
-                          ? theme.colors.contrast.toCssValue()
-                          : theme.colors.success.toCssValue()
-                      }
-                    />
+                    <VStack
+                      alignItems="center"
+                      style={{
+                        fontSize: '24px',
+                        color:
+                          value === 'fast'
+                            ? theme.colors.contrast.toCssValue()
+                            : theme.colors.success.toCssValue(),
+                      }}
+                    >
+                      <ShieldCheckIcon />
+                    </VStack>
                   ),
                 },
                 {
@@ -106,39 +100,46 @@ export const SetupVaultPage = () => {
                     ) : (
                       <LightningIconWrapper>
                         <LightningIcon
-                        color={theme.colors.contrast.toCssValue()}
-                      />
+                          color={theme.colors.contrast.toCssValue()}
+                        />
                       </LightningIconWrapper>
                     ),
                 },
               ]}
+              disabled={isPlaying}
               selected={value}
               onChange={newValue => {
-                setValue(newValue);
-                stateMachineInput?.fire();
+                if (isPlaying) return
+                onPlay()
+                setValue(newValue)
+                stateMachineInput?.fire()
               }}
             />
           </div>
           <DescriptionWrapper alignItems="flex-start">
             <DescriptionTitleWrapper>
-              {value === 'fast' ? (
-                <GradientText weight={500}>
-                  {t(`${value}_vault_setup_title`)}
-                </GradientText>
-              ) : (
-                <Text color="primary" weight={500}>
-                  {t(`${value}_vault_setup_title`)}
-                </Text>
-              )}
+              <Match
+                value={value}
+                fast={() => (
+                  <GradientText weight={500}>
+                    {t(`vault_setup_prop.fast.title`)}
+                  </GradientText>
+                )}
+                secure={() => (
+                  <Text color="primary" weight={500}>
+                    {t(`vault_setup_prop.secure.title`)}
+                  </Text>
+                )}
+              />
             </DescriptionTitleWrapper>
             <DescriptionContentWrapper>
-              {getSetupVaultProperties(value).map(prop => (
+              {getSetupVaultProperties(value, t).map(prop => (
                 <HStack key={prop} alignItems="center" gap={6}>
                   <IconWrapper>
                     <CheckIcon />
                   </IconWrapper>
                   <Text size={14} weight="600" color="contrast">
-                    {t(prop)}
+                    {prop}
                   </Text>
                 </HStack>
               ))}
@@ -148,16 +149,16 @@ export const SetupVaultPage = () => {
         </ContentWrapper>
       </PageContent>
     </>
-  );
-};
+  )
+}
 
-// @antonio: optical alignment
 const LightningGradientIconWrapper = styled.div`
   position: relative;
-  right: -4px;
   font-size: 24px;
-`;
+  margin-top: -1px;
+`
 
-export const LightningIconWrapper = styled.div`
+const LightningIconWrapper = styled.div`
   font-size: 20px;
-`;
+  margin-right: 3px;
+`

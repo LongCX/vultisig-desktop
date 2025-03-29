@@ -1,15 +1,15 @@
-import { chainFeeCoin } from '../../../coin/chainFeeCoin';
-import { Chain } from '../../../model/chain';
+import { Chain } from '@core/chain/Chain'
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
 
-const ETHTicker = chainFeeCoin[Chain.Ethereum].ticker;
+const ETHTicker = chainFeeCoin[Chain.Ethereum].ticker
 export const shouldDisplayChainLogo = ({
   ticker,
   chain,
   isNative,
 }: {
-  ticker: string;
-  chain: Chain;
-  isNative: boolean;
+  ticker: string
+  chain: Chain
+  isNative: boolean
 }): boolean => {
-  return !isNative || (ticker === ETHTicker && chain !== Chain.Ethereum);
-};
+  return !isNative || (ticker === ETHTicker && chain !== Chain.Ethereum)
+}

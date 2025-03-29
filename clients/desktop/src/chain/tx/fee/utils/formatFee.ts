@@ -1,22 +1,23 @@
-import { isOneOf } from '@lib/utils/array/isOneOf';
-import { formatAmount } from '@lib/utils/formatAmount';
-import { matchDiscriminatedUnion } from '@lib/utils/matchDiscriminatedUnion';
+import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
+import { Chain, EvmChain } from '@core/chain/Chain'
+import { cosmosGasLimitRecord } from '@core/chain/chains/cosmos/cosmosGasLimitRecord'
+import { polkadotConfig } from '@core/chain/chains/polkadot/config'
+import { solanaConfig } from '@core/chain/chains/solana/solanaConfig'
+import { tonConfig } from '@core/chain/chains/ton/config'
+import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
+import { rippleTxFee } from '@core/chain/tx/fee/ripple'
+import { KeysignChainSpecific } from '@core/mpc/keysign/chainSpecific/KeysignChainSpecific'
+import { isOneOf } from '@lib/utils/array/isOneOf'
+import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
+import { matchDiscriminatedUnion } from '@lib/utils/matchDiscriminatedUnion'
 
-import { chainFeeCoin } from '../../../../coin/chainFeeCoin';
-import { Chain, EvmChain } from '../../../../model/chain';
-import { cosmosGasLimitRecord } from '../../../cosmos/cosmosGasLimitRecord';
-import { KeysignChainSpecific } from '../../../keysign/KeysignChainSpecific';
-import { polkadotConfig } from '../../../polkadot/config';
-import { rippleConfig } from '../../../ripple/config';
-import { tonConfig } from '../../../ton/config';
-import { fromChainAmount } from '../../../utils/fromChainAmount';
-import { gwei } from './evm';
-import { getFeeUnit } from './feeUnit';
+import { gwei } from './evm'
+import { getFeeUnit } from './feeUnit'
 
 type FormatFeeInput = {
-  chain: Chain;
-  chainSpecific: KeysignChainSpecific;
-};
+  chain: Chain
+  chainSpecific: KeysignChainSpecific
+}
 
 export const formatFee = ({ chain, chainSpecific }: FormatFeeInput) => {
   const feeAmount: bigint = matchDiscriminatedUnion(
@@ -27,21 +28,25 @@ export const formatFee = ({ chain, chainSpecific }: FormatFeeInput) => {
       utxoSpecific: ({ byteFee }) => BigInt(byteFee),
       ethereumSpecific: ({ maxFeePerGasWei }) => BigInt(maxFeePerGasWei),
       suicheSpecific: ({ referenceGasPrice }) => BigInt(referenceGasPrice),
-      solanaSpecific: ({ priorityFee }) => BigInt(priorityFee),
+      solanaSpecific: ({ priorityFee }) =>
+        BigInt(priorityFee) == BigInt(0)
+          ? BigInt(solanaConfig.priorityFeeLimit)
+          : BigInt(priorityFee), // currently we hardcode the priority fee to 100_000 lamports
       thorchainSpecific: ({ fee }) => BigInt(fee),
       mayaSpecific: () => BigInt(cosmosGasLimitRecord[Chain.MayaChain]),
       cosmosSpecific: ({ gas }) => BigInt(gas),
       polkadotSpecific: () => polkadotConfig.fee,
       tonSpecific: () => tonConfig.fee,
-      rippleSpecific: () => rippleConfig.fee,
+      rippleSpecific: () => rippleTxFee,
+      tronSpecific: ({ gasEstimation }) => BigInt(gasEstimation || 0),
     }
-  );
+  )
 
   const decimals = isOneOf(chain, Object.values(EvmChain))
     ? gwei.decimals
-    : chainFeeCoin[chain].decimals;
+    : chainFeeCoin[chain].decimals
 
-  const amount = fromChainAmount(feeAmount, decimals);
+  const amount = fromChainAmount(feeAmount, decimals)
 
-  return formatAmount(amount, getFeeUnit(chain));
-};
+  return formatTokenAmount(amount, getFeeUnit(chain))
+}

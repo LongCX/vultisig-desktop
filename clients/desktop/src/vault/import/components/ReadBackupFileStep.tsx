@@ -1,39 +1,56 @@
-import { VaultContainer } from '@core/communication/vultisig/vault/v1/vault_container_pb';
-import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg';
-import { useMutation } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { OnFinishProp } from '@lib/ui/props'
+import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
+import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { ReadTextFile } from '../../../../wailsjs/go/main/App';
-import { Button } from '../../../lib/ui/buttons/Button';
-import { OnFinishProp } from '../../../lib/ui/props';
-import { MatchQuery } from '../../../lib/ui/query/components/MatchQuery';
-import { useAppPathState } from '../../../navigation/hooks/useAppPathState';
-import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack';
-import { FlowErrorPageContent } from '../../../ui/flow/FlowErrorPageContent';
-import { FlowPageHeader } from '../../../ui/flow/FlowPageHeader';
-import { FlowPendingPageContent } from '../../../ui/flow/FlowPendingPageContent';
-import { vaultContainerFromString } from '../utils/vaultContainerFromString';
+import { ReadTextFile } from '../../../../wailsjs/go/main/App'
+import { Button } from '../../../lib/ui/buttons/Button'
+import { useAppPathState } from '../../../navigation/hooks/useAppPathState'
+import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack'
+import { FlowErrorPageContent } from '../../../ui/flow/FlowErrorPageContent'
+import { FlowPageHeader } from '../../../ui/flow/FlowPageHeader'
+import { FlowPendingPageContent } from '../../../ui/flow/FlowPendingPageContent'
+import { isLikelyToBeDklsVaultBackup } from '../utils/isLikelyToBeDklsVaultBackup'
+import { vaultContainerFromString } from '../utils/vaultContainerFromString'
+import { FileBasedVaultBackupResult } from '../VaultBakupResult'
 
 export const ReadBackupFileStep = ({
   onFinish,
-}: OnFinishProp<VaultContainer>) => {
-  const { filePath } = useAppPathState<'importVaultFromFile'>();
+}: OnFinishProp<FileBasedVaultBackupResult>) => {
+  const { filePath } = useAppPathState<'importVaultFromFile'>()
 
   const { mutate, ...mutationState } = useMutation({
     mutationFn: async () => {
-      const fileContent = await ReadTextFile(filePath);
+      const fileContent = await ReadTextFile(filePath)
+      const fileName = filePath.split('/').pop() || filePath
 
-      return vaultContainerFromString(fileContent);
+      const vaultContainer = vaultContainerFromString(fileContent)
+
+      const result: FileBasedVaultBackupResult = {
+        result: { vaultContainer },
+      }
+
+      if (
+        isLikelyToBeDklsVaultBackup({
+          size: fileContent.length,
+          fileName,
+        })
+      ) {
+        result.override = { lib_type: 'DKLS' }
+      }
+
+      return result
     },
     onSuccess: onFinish,
-  });
+  })
 
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const goBack = useNavigateBack();
+  const goBack = useNavigateBack()
 
-  useEffect(mutate, [mutate]);
+  useEffect(mutate, [mutate])
 
   return (
     <>
@@ -51,5 +68,5 @@ export const ReadBackupFileStep = ({
         )}
       />
     </>
-  );
-};
+  )
+}

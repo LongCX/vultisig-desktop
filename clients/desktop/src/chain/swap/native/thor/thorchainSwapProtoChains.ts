@@ -1,13 +1,10 @@
-import { TW } from '@trustwallet/wallet-core';
+import { Chain, CosmosChain } from '@core/chain/Chain'
+import { TW } from '@trustwallet/wallet-core'
 
-import { Chain } from '../../../../model/chain';
-import { nativeSwapEnabledChainsRecord } from '../NativeSwapChain';
-
-export const thorchainSwapEnabledChains =
-  nativeSwapEnabledChainsRecord[Chain.THORChain];
+import { nativeSwapEnabledChainsRecord } from '../NativeSwapChain'
 
 export type ThorchainSwapEnabledChain =
-  (typeof thorchainSwapEnabledChains)[number];
+  (typeof nativeSwapEnabledChainsRecord)[CosmosChain.THORChain][number]
 
 export const thorchainSwapProtoChains: Record<
   ThorchainSwapEnabledChain,
@@ -22,4 +19,4 @@ export const thorchainSwapProtoChains: Record<
   [Chain.Cosmos]: TW.THORChainSwap.Proto.Chain.ATOM,
   [Chain.Litecoin]: TW.THORChainSwap.Proto.Chain.LTC,
   [Chain.THORChain]: TW.THORChainSwap.Proto.Chain.THOR,
-};
+}
