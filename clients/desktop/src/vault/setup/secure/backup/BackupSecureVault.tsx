@@ -1,13 +1,12 @@
-import { useNavigate } from 'react-router-dom'
+import { Match } from '@lib/ui/base/Match'
+import { StepTransition } from '@lib/ui/base/StepTransition'
+import { useStepNavigation } from '@lib/ui/hooks/useStepNavigation'
+import { OnFinishProp } from '@lib/ui/props'
 
-import { Match } from '../../../../lib/ui/base/Match'
-import { StepTransition } from '../../../../lib/ui/base/StepTransition'
-import { useStepNavigation } from '../../../../lib/ui/hooks/useStepNavigation'
 import { useIsInitiatingDevice } from '../../../../mpc/state/isInitiatingDevice'
-import { appPaths } from '../../../../navigation'
 import { useVaults } from '../../../queries/useVaultsQuery'
 import { SetupVaultSummaryStep } from '../../shared/SetupVaultSummaryStep'
-import VaultBackupPage from '../../shared/vaultBackupSettings/VaultBackupPage'
+import { VaultBackupFlow } from '../../shared/vaultBackupSettings/VaultBackupFlow'
 import { BackupConfirmation } from './BackupConfirmation'
 import { BackupOverviewSlidesPartOne } from './BackupOverviewSlidesPartOne'
 import { BackupSuccessSlide } from './BackupSuccessSlides'
@@ -20,8 +19,7 @@ const steps = [
   'backupSuccessfulSlideshow',
 ] as const
 
-export const BackupSecureVault = () => {
-  const navigate = useNavigate()
+export const BackupSecureVault = ({ onFinish }: OnFinishProp) => {
   const { step, toNextStep } = useStepNavigation({
     steps,
   })
@@ -41,21 +39,17 @@ export const BackupSecureVault = () => {
         )
       }
       backupConfirmation={() => <BackupConfirmation onCompleted={toNextStep} />}
-      backupPage={() => <VaultBackupPage onFinish={toNextStep} />}
+      backupPage={() => <VaultBackupFlow onFinish={toNextStep} />}
       backupSuccessfulSlideshow={() =>
         shouldShowBackupSummary ? (
           <StepTransition
             from={({ onForward }) => (
               <SetupVaultSummaryStep onForward={onForward} />
             )}
-            to={() => (
-              <BackupSuccessSlide
-                onCompleted={() => navigate(appPaths.vault)}
-              />
-            )}
+            to={() => <BackupSuccessSlide onFinish={onFinish} />}
           />
         ) : (
-          <BackupSuccessSlide onCompleted={() => navigate(appPaths.vault)} />
+          <BackupSuccessSlide onFinish={onFinish} />
         )
       }
     />

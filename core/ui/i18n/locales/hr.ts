@@ -28,7 +28,6 @@ export const hr = {
     'Generiranje pohrane počet će čim dovršite postavljanje na glavnom uređaju',
   coin_not_found_in_current_vault: 'Novčić nije pronađen u trenutnom trezoru',
   optionalDevice: 'Opcionális eszköz',
-  scanWithDevice: 'Beolvasás a {{deviceNumber}}. eszközzel',
   localMode: 'Helyi módban van',
   scanQrInstruction:
     'Olvassa be a QR-kódot egy másik eszközzel. 3 eszköz ajánlott, 2 elegendő.',
@@ -130,7 +129,6 @@ export const hr = {
   setup: 'Postavljanje',
   import: 'Uvezi',
   keygen: 'Generiranje ključa',
-  migrate: 'Migracija',
   name_your_vault: 'Imenujte svoj trezor',
   join: 'Pridruži se',
   done: 'Gotovo',
@@ -224,7 +222,6 @@ export const hr = {
   vault_setting_edit_vault_rename_subtitle: 'Preimenujte svoj trezor',
   vault_setting_edit_vault_reshare_subtitle:
     'Ponovno podijelite trezor s novom grupom uređaja.',
-  vault_setting_edit_vault_migrate_subtitle: 'Migriraj trezor u DKLS',
   vault_setting_edit_vault_delete_subtitle: 'Trajno izbrišite svoj trezor',
   vault_settings_language_settings_title_en: 'Engleski',
   vault_settings_language_settings_title_de: 'Njemački',
@@ -247,7 +244,6 @@ export const hr = {
   vault_backup_page_verified_password_input_placeholder: 'Potvrdite lozinku',
   vault_backup_page_verified_password_error: 'Lozinke se moraju podudarati',
   vault_backup_page_submit_loading_button_text: 'Spremanje...',
-  vault_backup_page_skip_button_text: 'Jelszó kihagyása',
   vault_backup_page_password_info:
     'Nikada ne pohranjujte dijelove trezora s različitih uređaja na isto mjesto',
   vault_rename_page_name_error: 'Naziv trezora mora biti između 1 i 50 znakova',
@@ -700,8 +696,6 @@ export const hr = {
   vault_value: 'Vrijednost trezora',
   vault_part: 'Trezorski dio',
   share: 'Udio',
-  join_migrate: 'Pridružite se migraciji',
-  waiting_for_migrate_start: 'Čeka se početak migracije...',
   backup_now: 'Sigurnosno kopirajte sada',
   share_n_of_m: 'Dijeli {{n}} od {{m}}',
   this_vault_share: 'ovaj dio trezora',
@@ -775,4 +769,25 @@ export const hr = {
   tap: 'Dodirnite',
   took_too_long_to_respond: 'Predugo je trebalo za odgovor',
   vultiserver_password: 'Lozinka Vultiservera',
+  backup_without_password: 'Sigurnosna kopija bez lozinke',
+  use_password: 'Koristi lozinku',
+  backup_password_prompt:
+    'Želite li dodati lozinku dijeljenjima trezora uređaja?',
+  backup_password_info:
+    'Preporučujemo da ne postavljate sigurnosnu lozinku za dijeljenje trezora uređaja - vaši su podaci sigurni ako su sigurnosne kopije pravilno pohranjene na različitim lokacijama, što je već značajna zaštita. Upamtite, sigurnosne lozinke nije moguće vratiti ako ih zaboravite. Vaš izbor!',
+  upgrade_your_vault_now: 'Nadogradite svoj trezor sada',
+  upgrade_vault: 'Nadogradite svoj trezor',
+  upgrade_now: 'Nadogradite sada',
+  got_it: 'shvaćam',
+  upgrade_vault_description:
+    'Nadogradite ovaj trezor na <b>najbrži MPC protokol na svijetu</b> i potpišite se brže nego ikada prije',
+  upgrade_all_devices:
+    'Provjerite jesu li <b>svi početni uređaji</b> prisutni prilikom nadogradnje',
+  upgrade_success: 'Vault je <b>uspješno</b> nadograđen',
+  go_to_vault: 'Idi u trezor',
+  upgrade: 'Nadogradnja',
+  scan_with_device_index: 'Skeniraj s {{index}} uređajem',
+  scan_with_device_name: 'Skeniraj s {{name}}',
+  join_upgrade: 'Pridružite se nadogradnji',
+  waiting_for_upgrade_start: 'Čeka se početak nadogradnje...',
 }
