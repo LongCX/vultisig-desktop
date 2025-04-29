@@ -1,38 +1,16 @@
 import { Chain } from '@core/chain/Chain'
-import { KeygenType } from '@core/mpc/keygen/KeygenType'
-import { KeysignMessagePayload } from '@core/mpc/keysign/keysignPayload/KeysignMessagePayload'
-import { KeygenMessage } from '@core/mpc/types/vultisig/keygen/v1/keygen_message_pb'
-import { ReshareMessage } from '@core/mpc/types/vultisig/keygen/v1/reshare_message_pb'
-import { KeysignMessage } from '@core/mpc/types/vultisig/keysign/v1/keysign_message_pb'
 import { addQueryParams } from '@lib/utils/query/addQueryParams'
 import { withoutUndefinedFields } from '@lib/utils/record/withoutUndefinedFields'
 
-import { SetupVaultType } from '../vault/setup/type/SetupVaultType'
-
 export const appPaths = {
   newVault: '/new-vault',
-  importVault: '/vault/import',
   importVaultFromFile: '/vault/import/file',
   shareVault: '/vault/share',
-  reshareVault: '/vault/reshare',
-  reshareVaultSecure: '/vault/reshare/secure',
   migrateVault: '/vault/migrate',
-  reshareVaultFast: '/vault/reshare/fast',
-  keysign: '/vault/keysign',
-  fastKeysign: '/vault/keysign/fast',
-  setupVault: '/vault/setup',
-  setupSecureVault: '/vault/setup/secure',
-  setupFastVault: '/vault/setup/fast',
-  setupActiveVault: '/vault/setup/active',
   address: '/address',
-  joinKeysign: '/join-keysign',
   root: '/',
   vaultSettings: '/vault/settings',
-  uploadQr: '/vault/qr/upload',
-  joinKeygen: '/join-keygen',
-  vaults: '/vaults',
   manageVaults: '/vaults/manage',
-  vault: '/vault',
   manageVaultChains: '/vault/chains',
   manageVaultChainCoins: '/vault/chains/coins',
   vaultChainDetail: '/vault/item/detail',
@@ -49,9 +27,6 @@ export const appPaths = {
   addressBook: '/vault/settings/address-book',
   defaultChains: '/vault/settings/default-chains',
   faq: '/vault/settings/faq',
-  shareApp: '/vault/settings/share-app',
-  privacyPolicy: '/vault/settings/privacy-policy',
-  termsOfService: '/vault/settings/terms-of-service',
   vaultFAQ: '/vault/settings/faq',
   swap: '/vault/item/swap',
   signCustomMessage: '/vault/sign-custom-message',
@@ -70,12 +45,10 @@ export type AppPath = keyof AppPaths
 
 export type AppPathParams = {
   address: { address: string }
-  uploadQr: { title?: string }
   manageVaultChainCoins: { chain: Chain }
   vaultChainDetail: { chain: Chain }
   vaultChainCoinDetail: { chain: Chain; coin: string }
   send: { coin: string; address?: string }
-  setupVault: { type?: SetupVaultType }
   swap: { coin: string }
   deposit: { coin: string }
   vaultFolder: { id: string }
@@ -83,17 +56,6 @@ export type AppPathParams = {
 }
 
 export type AppPathState = {
-  keysign: {
-    keysignPayload: KeysignMessagePayload
-  }
-  fastKeysign: {
-    keysignPayload: KeysignMessagePayload
-  }
-  joinKeysign: { vaultId: string; keysignMsg: KeysignMessage }
-  joinKeygen: {
-    keygenType: KeygenType
-    keygenMsg: KeygenMessage | ReshareMessage
-  }
   deeplink: {
     url: string
   }

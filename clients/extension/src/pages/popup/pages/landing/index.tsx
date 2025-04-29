@@ -1,74 +1,53 @@
-import { Button } from '@lib/ui/buttons/Button'
-import { HStack, VStack } from '@lib/ui/layout/Stack'
-import { Text } from '@lib/ui/text'
+import { Button } from '@clients/extension/src/components/button'
+import { ProductLogoBlock } from '@clients/extension/src/components/shared/Logo/ProductLogoBlock'
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { Divider } from '@lib/ui/divider'
+import { VStack } from '@lib/ui/layout/Stack'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageFooter } from '@lib/ui/page/PageFooter'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
-import styled from 'styled-components'
 
-import { AnimatedVisibility } from '../../../../components/shared/AnimatedVisibility'
-import { HorizontalLine } from '../../../../components/shared/HorizontalLine'
-import { ProductLogoBlock } from '../../../../components/shared/Logo/ProductLogoBlock'
-import { PageContent } from '../../../../components/shared/Page/PageContent'
-import { PageHeader } from '../../../../components/shared/Page/PageHeader'
-import { PageHeaderBackButton } from '../../../../components/shared/Page/PageHeaderBackButton'
-import { makeAppPath } from '../../../../navigation'
-import { useAppNavigate } from '../../../../navigation/hooks/useAppNavigate'
-
-export const NewVaultPage = ({ withBackButton = true }) => {
+export const NewVaultPage = () => {
   const { t } = useTranslation()
-  const navigate = useAppNavigate()
+  const navigate = useCoreNavigate()
 
   return (
-    <Wrapper delay={200}>
-      {withBackButton && (
-        <PageHeader primaryControls={<PageHeaderBackButton />} />
-      )}
-      <PageContent>
-        <VStack flexGrow alignItems="center" justifyContent="center">
-          <ProductLogoBlock />
-        </VStack>
-        <VStack gap={20}>
-          <Button onClick={() => navigate('setupVault')}>
-            {t('create_new_vault')}
-          </Button>
-          <HStack gap={18} alignItems="center">
-            <HorizontalLine />
-            <Text size={12} color="contrast" weight="700">
-              {t('or').toUpperCase()}
-            </Text>
-            <HorizontalLine />
-          </HStack>
-          <VStack gap={12}>
-            <ScanQRCodeLink
-              to={makeAppPath('uploadQr', {
-                title: t('scan_qr'),
-              })}
-              style={{ textDecoration: 'none' }}
-            >
-              <Button as="span" kind="secondary">
-                {t('scan_qr')}
-              </Button>
-            </ScanQRCodeLink>
-            <Button
-              onClick={() => navigate('import', { params: {} })}
-              kind="secondary"
-            >
-              {t('import_vault')}
-            </Button>
-          </VStack>
-        </VStack>
+    <VStack fullHeight>
+      <PageContent alignItems="center" justifyContent="center" flexGrow>
+        <ProductLogoBlock />
       </PageContent>
-    </Wrapper>
+      <PageFooter gap={16}>
+        <Button
+          onClick={() => navigate('setupVault', { params: {} })}
+          shape="round"
+          size="large"
+          type="primary"
+          block
+        >
+          {t('create_new_vault')}
+        </Button>
+        <Divider text={t('or').toUpperCase()} />
+        <VStack gap={12}>
+          <Button
+            onClick={() => navigate('uploadQr', { params: {} })}
+            shape="round"
+            size="large"
+            type="secondary"
+            block
+          >
+            {t('scan_qr')}
+          </Button>
+          <Button
+            onClick={() => navigate('importVault')}
+            shape="round"
+            size="large"
+            type="secondary"
+            block
+          >
+            {t('import_vault')}
+          </Button>
+        </VStack>
+      </PageFooter>
+    </VStack>
   )
 }
-
-const Wrapper = styled(AnimatedVisibility)`
-  overflow-y: hidden;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-`
-
-const ScanQRCodeLink = styled(Link)`
-  width: 100%;
-`

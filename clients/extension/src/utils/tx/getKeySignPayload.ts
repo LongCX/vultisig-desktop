@@ -1,28 +1,33 @@
 import { create } from '@bufbuild/protobuf'
 import api from '@clients/extension/src/utils/api'
 import { checkERC20Function } from '@clients/extension/src/utils/functions'
-import {
-  ITransaction,
-  VaultProps,
-} from '@clients/extension/src/utils/interfaces'
-import { Chain, CosmosChain } from '@core/chain/Chain'
+import { ITransaction, Vault } from '@clients/extension/src/utils/interfaces'
+import { Chain, CosmosChain, UtxoChain } from '@core/chain/Chain'
 import { getChainKind } from '@core/chain/ChainKind'
+import { getCosmosClient } from '@core/chain/chains/cosmos/client'
 import { cosmosFeeCoinDenom } from '@core/chain/chains/cosmos/cosmosFeeCoinDenom'
+import { getUtxos } from '@core/chain/chains/utxo/tx/getUtxos'
 import { AccountCoin } from '@core/chain/coin/AccountCoin'
 import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
 import { getCoinFromCoinKey } from '@core/chain/coin/Coin'
 import { isFeeCoin } from '@core/chain/coin/utils/isFeeCoin'
+import { assertChainField } from '@core/chain/utils/assertChainField'
 import { getChainSpecific } from '@core/mpc/keysign/chainSpecific'
+import {
+  CosmosIbcDenomTraceSchema,
+  TransactionType,
+} from '@core/mpc/types/vultisig/keysign/v1/blockchain_specific_pb'
 import { CoinSchema } from '@core/mpc/types/vultisig/keysign/v1/coin_pb'
 import {
   KeysignPayload,
   KeysignPayloadSchema,
 } from '@core/mpc/types/vultisig/keysign/v1/keysign_message_pb'
+import { isOneOf } from '@lib/utils/array/isOneOf'
 import { toUtf8String } from 'ethers'
 
 export const getKeysignPayload = (
   transaction: ITransaction,
-  vault: VaultProps
+  vault: Vault
 ): Promise<KeysignPayload> => {
   return new Promise((resolve, reject) => {
     ;(async () => {
@@ -72,6 +77,9 @@ export const getKeysignPayload = (
           amount: Number(transaction.transactionDetails.amount?.amount),
           isDeposit: transaction.isDeposit,
           receiver: transaction.transactionDetails.to,
+          transactionType: transaction.transactionDetails.ibcTransaction
+            ? TransactionType.IBC_TRANSFER
+            : TransactionType.UNSPECIFIED,
         })
         switch (chainSpecific.case) {
           case 'ethereumSpecific': {
@@ -84,6 +92,41 @@ export const getKeysignPayload = (
             chainSpecific.value.gasLimit =
               transaction.transactionDetails.gasSettings?.gasLimit ??
               chainSpecific.value.gasLimit
+            break
+          }
+          case 'cosmosSpecific': {
+            const isIbcTransfer =
+              chainSpecific.value.transactionType ===
+              TransactionType.IBC_TRANSFER
+
+            const hasTimeout =
+              !!transaction.transactionDetails.ibcTransaction!.timeoutTimestamp
+
+            if (isIbcTransfer && hasTimeout) {
+              try {
+                const client = await getCosmosClient(
+                  accountCoin.chain as CosmosChain
+                )
+                const latestBlock = await client.getBlock()
+
+                const latestBlockHeight = latestBlock.header.height
+                const timeoutTimestamp =
+                  transaction.transactionDetails.ibcTransaction!
+                    .timeoutTimestamp
+
+                chainSpecific.value.ibcDenomTraces = create(
+                  CosmosIbcDenomTraceSchema,
+                  {
+                    latestBlock: `${latestBlockHeight}_${timeoutTimestamp}`,
+                  }
+                )
+              } catch (error) {
+                console.error(
+                  'Failed to fetch Cosmos block or build denom trace:',
+                  error
+                )
+              }
+            }
             break
           }
         }
@@ -125,12 +168,14 @@ export const getKeysignPayload = (
               ).toString()
             : '0',
           memo: modifiedMemo ?? transaction.transactionDetails.data,
-          vaultPublicKeyEcdsa: vault.publicKeyEcdsa,
+          vaultPublicKeyEcdsa: vault.publicKeys.ecdsa,
           vaultLocalPartyId: 'VultiConnect',
           coin,
           blockchainSpecific: chainSpecific,
         })
-
+        if (isOneOf(transaction.chain.chain, Object.values(UtxoChain))) {
+          keysignPayload.utxoInfo = await getUtxos(assertChainField(coin))
+        }
         resolve(keysignPayload)
       } catch (error) {
         reject(error)

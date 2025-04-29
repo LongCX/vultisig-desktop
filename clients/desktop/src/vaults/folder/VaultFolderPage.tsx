@@ -1,20 +1,22 @@
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { CurrentVaultProvider } from '@core/ui/vault/state/currentVault'
+import { useFolderVaults } from '@core/ui/vault/state/vaults'
+import { getVaultId } from '@core/ui/vault/Vault'
 import { EditIcon } from '@lib/ui/icons/EditIcon'
 import { VStack } from '@lib/ui/layout/Stack'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderIconButton } from '@lib/ui/page/PageHeaderIconButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 
 import { useAppNavigate } from '../../navigation/hooks/useAppNavigate'
-import { PageContent } from '../../ui/page/PageContent'
-import { PageHeader } from '../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../ui/page/PageHeaderBackButton'
-import { PageHeaderIconButton } from '../../ui/page/PageHeaderIconButton'
-import { PageHeaderTitle } from '../../ui/page/PageHeaderTitle'
-import { useFolderVaults } from '../../vault/queries/useVaultsQuery'
-import { CurrentVaultProvider } from '../../vault/state/currentVault'
-import { getStorageVaultId } from '../../vault/utils/storageVault'
 import { VaultListItem } from '../components/VaultListItem'
 import { useCurrentVaultFolder } from './state/currentVaultFolder'
 
 export const VaultFolderPage = () => {
-  const navigate = useAppNavigate()
+  const navigate = useCoreNavigate()
+  const appNavigate = useAppNavigate()
   const { id, name } = useCurrentVaultFolder()
 
   const vaults = useFolderVaults(id)
@@ -29,7 +31,7 @@ export const VaultFolderPage = () => {
         secondaryControls={
           <PageHeaderIconButton
             icon={<EditIcon />}
-            onClick={() => navigate('manageVaultFolder', { params: { id } })}
+            onClick={() => appNavigate('manageVaultFolder', { params: { id } })}
           />
         }
         title={<PageHeaderTitle>{name}</PageHeaderTitle>}
@@ -37,7 +39,7 @@ export const VaultFolderPage = () => {
       <PageContent scrollable>
         <VStack gap={8}>
           {vaults.map(vault => (
-            <CurrentVaultProvider value={vault} key={getStorageVaultId(vault)}>
+            <CurrentVaultProvider value={vault} key={getVaultId(vault)}>
               <VaultListItem />
             </CurrentVaultProvider>
           ))}

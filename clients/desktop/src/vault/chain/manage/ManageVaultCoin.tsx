@@ -1,17 +1,17 @@
 import { areEqualCoins, Coin } from '@core/chain/coin/Coin'
+import { useCurrentVaultCoins } from '@core/ui/vault/state/currentVaultCoins'
 import { interactive } from '@lib/ui/css/interactive'
 import { sameDimensions } from '@lib/ui/css/sameDimensions'
+import { CheckStatus } from '@lib/ui/inputs/checkbox/CheckStatus'
 import { HStack, VStack } from '@lib/ui/layout/Stack'
+import { Panel } from '@lib/ui/panel/Panel'
 import { ValueProp } from '@lib/ui/props'
 import { Text } from '@lib/ui/text'
 import { ReactNode, useEffect, useState } from 'react'
 import styled from 'styled-components'
 
-import { CheckStatus } from '../../../lib/ui/inputs/checkbox/CheckStatus'
-import { Panel } from '../../../lib/ui/panel/Panel'
 import { useDeleteCoinMutation } from '../../mutations/useDeleteCoinMutation'
 import { useSaveCoinMutation } from '../../mutations/useSaveCoinMutation'
-import { useCurrentVaultCoins } from '../../state/currentVault'
 
 const Container = styled(Panel)`
   ${interactive};

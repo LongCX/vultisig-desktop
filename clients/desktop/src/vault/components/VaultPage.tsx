@@ -1,25 +1,25 @@
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { useCurrentVault } from '@core/ui/vault/state/currentVault'
 import { toSizeUnit } from '@lib/ui/css/toSizeUnit'
 import { QrCodeIcon } from '@lib/ui/icons/QrCodeIcon'
 import { VStack } from '@lib/ui/layout/Stack'
+import { pageConfig } from '@lib/ui/page/config'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderIconButton } from '@lib/ui/page/PageHeaderIconButton'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 
 import UpdateAvailablePopup from '../../components/updateAvailablePopup/UpdateAvailablePopup'
 import { makeAppPath } from '../../navigation'
-import { useAppNavigate } from '../../navigation/hooks/useAppNavigate'
 import { PageHeaderVaultSettingsPrompt } from '../../pages/vaultSettings/PageHeaderVaultSettingsPrompt'
-import { pageConfig } from '../../ui/page/config'
-import { PageHeader } from '../../ui/page/PageHeader'
-import { PageHeaderIconButton } from '../../ui/page/PageHeaderIconButton'
 import { PageHeaderIconButtons } from '../../ui/page/PageHeaderIconButtons'
 import { PageHeaderToggleTitle } from '../../ui/page/PageHeaderToggleTitle'
 import { RefreshVaultBalance } from '../../vault/balance/RefreshVaultBalance'
 import { VaultOverview } from '../../vault/components/VaultOverview'
 import { ProvideQrPrompt } from '../../vault/qr/ProvideQrPrompt'
-import { useCurrentVault } from '../state/currentVault'
 
 export const VaultPage = () => {
-  const navigate = useAppNavigate()
+  const navigate = useCoreNavigate()
   const { name } = useCurrentVault()
 
   return (

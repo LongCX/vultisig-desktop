@@ -1,18 +1,18 @@
 import { coinKeyToString } from '@core/chain/coin/Coin'
+import { useCorePathParams } from '@core/ui/navigation/hooks/useCorePathParams'
+import { useCurrentVaultCoins } from '@core/ui/vault/state/currentVaultCoins'
 import { Match } from '@lib/ui/base/Match'
+import { FlowPageHeader } from '@lib/ui/flow/FlowPageHeader'
+import { useNavigateBack } from '@lib/ui/navigation/hooks/useNavigateBack'
+import { StyledPageContent } from '@lib/ui/qr/upload/UploadQRPage/UploadQRPage.styled'
+import { useToast } from '@lib/ui/toast/ToastProvider'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useToast } from '../../../../lib/ui/toast/ToastProvider'
 import { useAppNavigate } from '../../../../navigation/hooks/useAppNavigate'
-import { useAppPathParams } from '../../../../navigation/hooks/useAppPathParams'
-import { useNavigateBack } from '../../../../navigation/hooks/useNavigationBack'
-import { FlowPageHeader } from '../../../../ui/flow/FlowPageHeader'
-import { useCurrentVaultCoins } from '../../../state/currentVault'
 import { ScanQrView } from '../ScanQrView'
 import { UploadQrView } from '../UploadQrView'
 import { useDeriveChainFromWalletAddress } from '../useDeriveChainFromWalletAddress'
-import { StyledPageContent } from './UploadQRPage.styled'
 
 const uploadQrViews = ['scan', 'upload'] as const
 type UploadQrView = (typeof uploadQrViews)[number]
@@ -20,7 +20,7 @@ type UploadQrView = (typeof uploadQrViews)[number]
 export const UploadQrPageWithExistingVault = () => {
   const { t } = useTranslation()
   const navigate = useAppNavigate()
-  const [{ title = t('keysign') }] = useAppPathParams<'uploadQr'>()
+  const [{ title = t('keysign') }] = useCorePathParams<'uploadQr'>()
   const coins = useCurrentVaultCoins()
   const { addToast } = useToast()
   const goBack = useNavigateBack()

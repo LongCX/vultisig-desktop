@@ -1,4 +1,11 @@
+import { isLikelyToBeDklsVaultBackup } from '@core/ui/vault/import/utils/isLikelyToBeDklsVaultBackup'
+import { vaultContainerFromString } from '@core/ui/vault/import/utils/vaultContainerFromString'
+import { FileBasedVaultBackupResult } from '@core/ui/vault/import/VaultBackupResult'
 import { Button } from '@lib/ui/buttons/Button'
+import { FlowErrorPageContent } from '@lib/ui/flow/FlowErrorPageContent'
+import { FlowPageHeader } from '@lib/ui/flow/FlowPageHeader'
+import { FlowPendingPageContent } from '@lib/ui/flow/FlowPendingPageContent'
+import { useNavigateBack } from '@lib/ui/navigation/hooks/useNavigateBack'
 import { OnFinishProp } from '@lib/ui/props'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
@@ -8,13 +15,6 @@ import { useTranslation } from 'react-i18next'
 
 import { ReadTextFile } from '../../../../wailsjs/go/main/App'
 import { useAppPathState } from '../../../navigation/hooks/useAppPathState'
-import { useNavigateBack } from '../../../navigation/hooks/useNavigationBack'
-import { FlowErrorPageContent } from '../../../ui/flow/FlowErrorPageContent'
-import { FlowPageHeader } from '../../../ui/flow/FlowPageHeader'
-import { FlowPendingPageContent } from '../../../ui/flow/FlowPendingPageContent'
-import { isLikelyToBeDklsVaultBackup } from '../utils/isLikelyToBeDklsVaultBackup'
-import { vaultContainerFromString } from '../utils/vaultContainerFromString'
-import { FileBasedVaultBackupResult } from '../VaultBakupResult'
 
 export const ReadBackupFileStep = ({
   onFinish,
@@ -38,7 +38,7 @@ export const ReadBackupFileStep = ({
           fileName,
         })
       ) {
-        result.override = { lib_type: 'DKLS' }
+        result.override = { libType: 'DKLS' }
       }
 
       return result

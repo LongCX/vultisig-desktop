@@ -17,7 +17,7 @@ import {
   SendTransactionResponse,
   TransactionDetails,
   TransactionType,
-  VaultProps,
+  Vault,
 } from '@clients/extension/src/utils/interfaces'
 import {
   getIsPriority,
@@ -48,12 +48,31 @@ import {
   TypedDataEncoder,
 } from 'ethers'
 import { v4 as uuidv4 } from 'uuid'
+
+import { handleSetupInpage } from '../utils/setupInpage'
+if (!navigator.userAgent.toLowerCase().includes('firefox')) {
+  ;[
+    Object,
+    Object.prototype,
+    Function,
+    Function.prototype,
+    Array,
+    Array.prototype,
+    String,
+    String.prototype,
+    Number,
+    Number.prototype,
+    Boolean,
+    Boolean.prototype,
+  ].forEach(Object.freeze)
+}
+handleSetupInpage()
+
 let rpcProvider: JsonRpcProvider
 
-const instance = {
-  [Instance.ACCOUNTS]: false,
+const instance: Record<Instance, boolean> = {
+  [Instance.CONNECT]: false,
   [Instance.TRANSACTION]: false,
-  [Instance.VAULT]: false,
   [Instance.VAULTS]: false,
 }
 
@@ -91,61 +110,63 @@ const handleProvider = (chain: Chain, update?: boolean) => {
 }
 
 const handleFindAccounts = (
-  chain: Chain,
-  sender: string
+  _chain: Chain,
+  _sender: string
 ): Promise<string[]> => {
-  return new Promise(resolve => {
-    getStoredVaults()
-      .then(vaults => {
-        resolve(
-          vaults.flatMap(({ active, apps, chains }) =>
-            active && apps
-              ? chains
-                  .filter(
-                    (selectedChain: ChainProps) =>
-                      selectedChain.chain === chain && apps.indexOf(sender) >= 0
-                  )
-                  .map(({ address }) => address ?? '')
-              : []
-          )
-        )
-      })
-      .catch(() => resolve([]))
+  return new Promise(_resolve => {
+    //TODO: introduce connected apps
+    // getStoredVaults()
+    //   .then(vaults => {
+    //     resolve(
+    //       vaults.flatMap(({ active, apps, chains }) =>
+    //         active && apps
+    //           ? chains
+    //               .filter(
+    //                 (selectedChain: ChainProps) =>
+    //                   selectedChain.chain === chain && apps.indexOf(sender) >= 0
+    //               )
+    //               .map(({ address }) => address ?? '')
+    //           : []
+    //       )
+    //     )
+    //   })
+    //   .catch(() => resolve([]))
   })
 }
 
 const handleFindVault = (
-  sender: string
+  _sender: string
 ): Promise<Messaging.GetVault.Response> => {
-  return new Promise(resolve => {
-    getStoredVaults()
-      .then(vaults => {
-        resolve(
-          vaults.find(
-            ({ active, apps = [] }) => active && apps.indexOf(sender) >= 0
-          )
-        )
-      })
-      .catch(() => resolve(undefined))
+  return new Promise(_resolve => {
+    //TODO: introduce connected apps
+    // getStoredVaults()
+    //   .then(vaults => {
+    //     resolve(
+    //       vaults.find(
+    //         ({ active, apps = [] }) => active && apps.indexOf(sender) >= 0
+    //       )
+    //     )
+    //   })
+    //   .catch(() => resolve(undefined))
   })
 }
 
 const handleGetAccounts = (chain: Chain, sender: string): Promise<string[]> => {
   return new Promise(resolve => {
-    if (instance[Instance.ACCOUNTS]) {
+    if (instance[Instance.CONNECT]) {
       const interval = setInterval(() => {
-        if (!instance[Instance.ACCOUNTS]) {
+        if (!instance[Instance.CONNECT]) {
           clearInterval(interval)
 
           handleFindAccounts(chain, sender).then(resolve)
         }
       }, 250)
     } else {
-      instance[Instance.ACCOUNTS] = true
+      instance[Instance.CONNECT] = true
 
       handleFindAccounts(chain, sender).then(accounts => {
         if (accounts.length) {
-          instance[Instance.ACCOUNTS] = false
+          instance[Instance.CONNECT] = false
 
           resolve(accounts)
         } else {
@@ -153,10 +174,10 @@ const handleGetAccounts = (chain: Chain, sender: string): Promise<string[]> => {
             chain,
             sender,
           }).then(() => {
-            handleOpenPanel(Instance.ACCOUNTS).then(createdWindowId => {
+            handleOpenPanel(Instance.CONNECT).then(createdWindowId => {
               chrome.windows.onRemoved.addListener(closedWindowId => {
                 if (closedWindowId === createdWindowId) {
-                  instance[Instance.ACCOUNTS] = false
+                  instance[Instance.CONNECT] = false
 
                   handleFindAccounts(chain, sender).then(resolve)
                 }
@@ -173,20 +194,20 @@ const handleGetVault = (
   sender: string
 ): Promise<Messaging.GetVault.Response> => {
   return new Promise(resolve => {
-    if (instance[Instance.VAULT]) {
+    if (instance[Instance.CONNECT]) {
       const interval = setInterval(() => {
-        if (!instance[Instance.VAULT]) {
+        if (!instance[Instance.CONNECT]) {
           clearInterval(interval)
 
           handleFindVault(sender).then(resolve)
         }
       }, 250)
     } else {
-      instance[Instance.VAULT] = true
+      instance[Instance.CONNECT] = true
 
       handleFindVault(sender).then(vault => {
         if (vault) {
-          instance[Instance.VAULT] = false
+          instance[Instance.CONNECT] = false
 
           resolve(vault)
         } else {
@@ -194,10 +215,10 @@ const handleGetVault = (
             chain: Chain.Ethereum,
             sender,
           }).then(() => {
-            handleOpenPanel(Instance.VAULT).then(createdWindowId => {
+            handleOpenPanel(Instance.CONNECT).then(createdWindowId => {
               chrome.windows.onRemoved.addListener(closedWindowId => {
                 if (closedWindowId === createdWindowId) {
-                  instance[Instance.VAULT] = false
+                  instance[Instance.CONNECT] = false
 
                   handleFindVault(sender).then(resolve)
                 }
@@ -223,23 +244,11 @@ const handleGetVaults = (): Promise<Messaging.GetVaults.Response> => {
                 resolve(
                   vaults
                     .filter(({ selected }) => selected)
-                    .map(
-                      ({
-                        hexChainCode,
-                        name,
-                        publicKeyEcdsa,
-                        publicKeyEddsa,
-                        uid,
-                      }) => ({
-                        chains: [],
-                        hexChainCode,
-                        name,
-                        publicKeyEcdsa,
-                        publicKeyEddsa,
-                        transactions: [],
-                        uid,
-                      })
-                    )
+                    .map(vault => ({
+                      ...vault,
+                      chains: [],
+                      transactions: [],
+                    }))
                 )
               })
             }
@@ -407,26 +416,33 @@ const handleRequest = (
       }
       case RequestMethod.VULTISIG.SEND_TRANSACTION: {
         const [_transaction] = params
-        const isBasic = isBasicTransaction(_transaction)
-
-        getStandardTransactionDetails(
-          {
-            ..._transaction,
-            txType: isBasic ? 'MetaMask' : (_transaction.txType ?? 'Vultisig'),
-          } as TransactionType.WalletTransaction,
-          chain
-        ).then(standardTx => {
-          const modifiedTransaction: ITransaction = {
-            transactionDetails: standardTx as TransactionDetails,
-            chain,
-            id: '',
-            status: 'default',
-          }
-          handleSendTransaction(modifiedTransaction, chain)
+        if (chain.chain === Chain.Solana && _transaction.serializedTx) {
+          handleSendTransaction(_transaction as ITransaction, chain)
             .then(result => resolve(result))
             .catch(reject)
-        })
+        } else {
+          const isBasic = isBasicTransaction(_transaction)
 
+          getStandardTransactionDetails(
+            {
+              ..._transaction,
+              txType: isBasic
+                ? 'MetaMask'
+                : (_transaction.txType ?? 'Vultisig'),
+            } as TransactionType.WalletTransaction,
+            chain
+          ).then(standardTx => {
+            const modifiedTransaction: ITransaction = {
+              transactionDetails: standardTx as TransactionDetails,
+              chain,
+              id: '',
+              status: 'default',
+            }
+            handleSendTransaction(modifiedTransaction, chain)
+              .then(result => resolve(result))
+              .catch(reject)
+          })
+        }
         break
       }
       case RequestMethod.METAMASK.ETH_SEND_TRANSACTION: {
@@ -999,8 +1015,8 @@ chrome.runtime.onMessage.addListener(
                   message.method === RequestMethod.VULTISIG.REQUEST_ACCOUNTS
                 ) {
                   try {
-                    getStoredVaults().then((vaults: VaultProps[]) => {
-                      const vault = vaults.find((vault: VaultProps) => {
+                    getStoredVaults().then((vaults: Vault[]) => {
+                      const vault = vaults.find((vault: Vault) => {
                         return (
                           vault.chains.find(
                             (selectedChain: ChainProps) =>
@@ -1057,8 +1073,8 @@ chrome.runtime.onMessage.addListener(
                     if (
                       message.method === RequestMethod.VULTISIG.REQUEST_ACCOUNTS
                     ) {
-                      getStoredVaults().then((vaults: VaultProps[]) => {
-                        const vault = vaults.find((vault: VaultProps) => {
+                      getStoredVaults().then((vaults: Vault[]) => {
+                        const vault = vaults.find((vault: Vault) => {
                           return (
                             vault.chains.find(
                               (selectedChain: ChainProps) =>

@@ -1,23 +1,23 @@
+import { useCoinPriceQuery } from '@core/ui/chain/coin/price/queries/useCoinPriceQuery'
+import { useCurrentVaultCoin } from '@core/ui/vault/state/currentVaultCoins'
 import { RefreshIcon } from '@lib/ui/icons/RefreshIcon'
 import { VStack } from '@lib/ui/layout/Stack'
+import { Spinner } from '@lib/ui/loaders/Spinner'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderIconButton } from '@lib/ui/page/PageHeaderIconButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
+import { Panel } from '@lib/ui/panel/Panel'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 import { useInvalidateQueriesMutation } from '@lib/ui/query/hooks/useInvalidateQueriesMutation'
 import { useTranslation } from 'react-i18next'
 
 import { useBalanceQuery } from '../../../coin/query/useBalanceQuery'
 import { getBalanceQueryKey } from '../../../coin/query/useBalancesQuery'
-import { useCoinPriceQuery } from '../../../coin/query/useCoinPriceQuery'
 import { Center } from '../../../lib/ui/layout/Center'
-import { Spinner } from '../../../lib/ui/loaders/Spinner'
-import { Panel } from '../../../lib/ui/panel/Panel'
-import { PageContent } from '../../../ui/page/PageContent'
-import { PageHeader } from '../../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
-import { PageHeaderIconButton } from '../../../ui/page/PageHeaderIconButton'
 import { PageHeaderIconButtons } from '../../../ui/page/PageHeaderIconButtons'
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
 import { VaultPrimaryActions } from '../../components/VaultPrimaryActions'
-import { useCurrentVaultCoin } from '../../state/currentVault'
 import { VaultChainCoinItem } from '../VaultChainCoinItem'
 import { useCurrentVaultCoinKey } from './useCurrentVaultCoinKey'
 
@@ -47,12 +47,12 @@ export const VaultChainCoinPage = () => {
           <PageHeaderIconButtons>
             <PageHeaderIconButton
               onClick={() =>
-                invalidateQueries(
+                invalidateQueries([
                   getBalanceQueryKey({
                     ...coinKey,
                     address: coin.address,
-                  })
-                )
+                  }),
+                ])
               }
               icon={isInvalidating ? <Spinner /> : <RefreshIcon />}
             />

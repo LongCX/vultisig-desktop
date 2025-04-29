@@ -2,31 +2,25 @@ import { create } from '@bufbuild/protobuf'
 import { toChainAmount } from '@core/chain/amount/toChainAmount'
 import { Chain } from '@core/chain/Chain'
 import { coinKeyFromString } from '@core/chain/coin/Coin'
+import { getPublicKey } from '@core/chain/publicKey/getPublicKey'
 import { toCommCoin } from '@core/mpc/types/utils/commCoin'
 import { KeysignPayloadSchema } from '@core/mpc/types/vultisig/keysign/v1/keysign_message_pb'
 import { useAssertWalletCore } from '@core/ui/chain/providers/WalletCoreProvider'
-import { Button } from '@lib/ui/buttons/Button'
-import { VStack } from '@lib/ui/layout/Stack'
+import { useCurrentVault } from '@core/ui/vault/state/currentVault'
+import { useCurrentVaultCoin } from '@core/ui/vault/state/currentVaultCoins'
 import { Text } from '@lib/ui/text'
 import { isOneOf } from '@lib/utils/array/isOneOf'
 import { shouldBePresent } from '@lib/utils/assert/shouldBePresent'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { toHexPublicKey } from '../../../chain/utils/toHexPublicKey'
-import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate'
 import { useAppPathParams } from '../../../navigation/hooks/useAppPathParams'
-import { useVaultPublicKeyQuery } from '../../publicKey/queries/useVaultPublicKeyQuery'
-import {
-  useCurrentVault,
-  useCurrentVaultCoin,
-  useVaultServerStatus,
-} from '../../state/currentVault'
+import { StartKeysignPrompt } from '../../keysign/components/StartKeysignPrompt'
 import { ChainAction } from '../ChainAction'
 import { useCurrentDepositCoin } from '../hooks/useCurrentDepositCoin'
 import { useDepositChainSpecificQuery } from '../queries/useDepositChainSpecificQuery'
 import { transactionConfig } from './config'
-
-type DepositType = 'fast' | 'paired'
 
 type DepositConfirmButtonProps = {
   depositFormData: Record<string, unknown>
@@ -43,7 +37,6 @@ export const DepositConfirmButton = ({
   const { t } = useTranslation()
   const [coinKey] = useCurrentDepositCoin()
   const coin = useCurrentVaultCoin(coinKey)
-  const navigate = useAppNavigate()
   const chainSpecificQuery = useDepositChainSpecificQuery()
   const vault = useCurrentVault()
   const config = transactionConfig[action] || {}
@@ -58,13 +51,16 @@ export const DepositConfirmButton = ({
 
   const memo = (depositFormData['memo'] as string) ?? ''
 
-  const publicKeyQuery = useVaultPublicKeyQuery(coin.chain)
-
   const walletCore = useAssertWalletCore()
 
-  const startKeysign = (type: DepositType) => {
+  const keysignPayload = useMemo(() => {
     // TODO: handle affiliate fee and percentage
-    const publicKey = shouldBePresent(publicKeyQuery.data)
+    const publicKey = getPublicKey({
+      chain: coin.chain,
+      walletCore,
+      hexChainCode: vault.hexChainCode,
+      publicKeys: vault.publicKeys,
+    })
     const keysignPayload = create(KeysignPayloadSchema, {
       coin: toCommCoin({
         ...coin,
@@ -75,8 +71,8 @@ export const DepositConfirmButton = ({
       }),
       memo,
       blockchainSpecific: shouldBePresent(chainSpecificQuery.data),
-      vaultLocalPartyId: vault.local_party_id,
-      vaultPublicKeyEcdsa: vault.public_key_ecdsa,
+      vaultLocalPartyId: vault.localPartyId,
+      vaultPublicKeyEcdsa: vault.publicKeys.ecdsa,
     })
 
     if (isOneOf(action, ['unstake', 'leave', 'unbound', 'stake', 'bond'])) {
@@ -92,14 +88,21 @@ export const DepositConfirmButton = ({
       ).toString()
     }
 
-    navigate(type === 'fast' ? 'fastKeysign' : 'keysign', {
-      state: {
-        keysignPayload: { keysign: keysignPayload },
-      },
-    })
-  }
-
-  const { hasServer, isBackup } = useVaultServerStatus()
+    return { keysign: keysignPayload }
+  }, [
+    action,
+    amount,
+    chainSpecificQuery.data,
+    coin,
+    isTonFunction,
+    memo,
+    receiver,
+    validatorAddress,
+    vault.hexChainCode,
+    vault.localPartyId,
+    vault.publicKeys,
+    walletCore,
+  ])
 
   if (
     (config.requiresAmount && !Number.isFinite(amount)) ||
@@ -109,24 +112,13 @@ export const DepositConfirmButton = ({
     return <Text color="danger">{t('required_field_missing')}</Text>
   }
 
-  if (chainSpecificQuery.error || publicKeyQuery.error) {
+  if (chainSpecificQuery.error) {
     return <Text color="danger">{t('failed_to_load')}</Text>
   }
 
-  if (chainSpecificQuery.isLoading || publicKeyQuery.isLoading) {
+  if (chainSpecificQuery.isLoading) {
     return <Text>{t('loading')}</Text>
   }
 
-  if (hasServer && !isBackup) {
-    return (
-      <VStack gap={20}>
-        <Button onClick={() => startKeysign('fast')}>{t('fast_sign')}</Button>
-        <Button kind="outlined" onClick={() => startKeysign('paired')}>
-          {t('paired_sign')}
-        </Button>
-      </VStack>
-    )
-  }
-
-  return <Button onClick={() => startKeysign('paired')}>{t('continue')}</Button>
+  return <StartKeysignPrompt value={keysignPayload} />
 }

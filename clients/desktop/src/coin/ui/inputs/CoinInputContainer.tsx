@@ -1,5 +1,9 @@
 import { Coin } from '@core/chain/coin/Coin'
 import { isFeeCoin } from '@core/chain/coin/utils/isFeeCoin'
+import { ChainCoinIcon } from '@core/ui/chain/coin/icon/ChainCoinIcon'
+import { getChainEntityIconSrc } from '@core/ui/chain/coin/icon/utils/getChainEntityIconSrc'
+import { getCoinLogoSrc } from '@core/ui/chain/coin/icon/utils/getCoinLogoSrc'
+import { shouldDisplayChainLogo } from '@core/ui/chain/coin/icon/utils/shouldDisplayChainLogo'
 import { UnstyledButton } from '@lib/ui/buttons/UnstyledButton'
 import { textInputBackground, textInputFrame } from '@lib/ui/css/textInput'
 import { ChevronRightIcon } from '@lib/ui/icons/ChevronRightIcon'
@@ -10,11 +14,11 @@ import { getColor } from '@lib/ui/theme/getters'
 import { ComponentProps } from 'react'
 import styled from 'styled-components'
 
-import { ChainCoinIcon } from '../../../chain/ui/ChainCoinIcon'
-import { getChainEntityIconSrc } from '../../../chain/utils/getChainEntityIconSrc'
-import { IconWrapper } from '../../../pages/edItVault/EditVaultPage.styles'
-import { shouldDisplayChainLogo } from '../../../vault/chain/utils'
-import { getCoinLogoSrc } from '../../logo/getCoinLogoSrc'
+const IconWrapper = styled.div`
+  align-self: center;
+  height: 30px;
+  font-size: 24px;
+`
 
 const Container = styled(UnstyledButton)`
   ${textInputFrame};

@@ -1,9 +1,14 @@
 import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
 import { getCoinValue } from '@core/chain/coin/utils/getCoinValue'
+import { ChainEntityIcon } from '@core/ui/chain/coin/icon/ChainEntityIcon'
+import { getChainEntityIconSrc } from '@core/ui/chain/coin/icon/utils/getChainEntityIconSrc'
+import { useFiatCurrency } from '@core/ui/state/fiatCurrency'
+import { useCurrentVaultAddreses } from '@core/ui/vault/state/currentVaultCoins'
 import { centerContent } from '@lib/ui/css/centerContent'
 import { horizontalPadding } from '@lib/ui/css/horizontalPadding'
 import { round } from '@lib/ui/css/round'
 import { HStack, VStack } from '@lib/ui/layout/Stack'
+import { Panel } from '@lib/ui/panel/Panel'
 import { Text } from '@lib/ui/text'
 import { getColor } from '@lib/ui/theme/getters'
 import { sum } from '@lib/utils/array/sum'
@@ -11,13 +16,8 @@ import { formatAmount } from '@lib/utils/formatAmount'
 import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
 import styled from 'styled-components'
 
-import { ChainEntityIcon } from '../../chain/ui/ChainEntityIcon'
-import { getChainEntityIconSrc } from '../../chain/utils/getChainEntityIconSrc'
-import { Panel } from '../../lib/ui/panel/Panel'
-import { useFiatCurrency } from '../../preferences/state/fiatCurrency'
 import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware'
 import { VaultChainBalance } from '../queries/useVaultChainsBalancesQuery'
-import { useCurrentVaultAddreses } from '../state/currentVault'
 import { useHandleVaultChainItemPress } from './useHandleVaultChainItemPress'
 
 const Pill = styled.div`
@@ -35,7 +35,7 @@ type VaultChainItemProps = {
 
 export const VaultChainItem = ({ balance }: VaultChainItemProps) => {
   const { chain, coins } = balance
-  const [fiatCurrency] = useFiatCurrency()
+  const fiatCurrency = useFiatCurrency()
 
   const addresses = useCurrentVaultAddreses()
   const address = addresses[chain]

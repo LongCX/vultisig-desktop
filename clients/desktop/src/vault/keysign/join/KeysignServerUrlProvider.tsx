@@ -1,22 +1,22 @@
+import { FullPageFlowErrorState } from '@core/ui/flow/FullPageFlowErrorState'
+import { MpcServerTypeProvider } from '@core/ui/mpc/state/mpcServerType'
+import { MpcServerUrlProvider } from '@core/ui/mpc/state/mpcServerUrl'
+import { MpcPendingMessage } from '@core/ui/mpc/status/MpcPendingMessage'
+import { useCorePathState } from '@core/ui/navigation/hooks/useCorePathState'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 import { ChildrenProp } from '@lib/ui/props'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 import { useTranslation } from 'react-i18next'
 
-import { MpcServerTypeProvider } from '../../../mpc/serverType/state/mpcServerType'
-import { MpcServerUrlProvider } from '../../../mpc/serverType/state/mpcServerUrl'
-import { useAppPathState } from '../../../navigation/hooks/useAppPathState'
-import { FullPageFlowErrorState } from '../../../ui/flow/FullPageFlowErrorState'
-import { PageContent } from '../../../ui/page/PageContent'
-import { PageHeader } from '../../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
 import { useKeygenServerUrlQuery } from '../../keygen/server/queries/useKeygenServerUrlQuery'
-import { PendingKeygenMessage } from '../../keygen/shared/PendingKeygenMessage'
 
 export const KeysignServerUrlProvider = ({ children }: ChildrenProp) => {
   const {
     keysignMsg: { serviceName, useVultisigRelay },
-  } = useAppPathState<'joinKeysign'>()
+  } = useCorePathState<'joinKeysign'>()
 
   const serverType = useVultisigRelay ? 'relay' : 'local'
 
@@ -47,9 +47,7 @@ export const KeysignServerUrlProvider = ({ children }: ChildrenProp) => {
             primaryControls={<PageHeaderBackButton />}
           />
           <PageContent justifyContent="center" alignItems="center">
-            <PendingKeygenMessage>
-              {t('discovering_mediator')}
-            </PendingKeygenMessage>
+            <MpcPendingMessage>{t('discovering_mediator')}</MpcPendingMessage>
           </PageContent>
         </>
       )}

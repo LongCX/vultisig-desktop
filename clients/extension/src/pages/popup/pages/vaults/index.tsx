@@ -1,103 +1,93 @@
-import useGoBack from '@clients/extension/src/hooks/go-back'
-import { ArrowLeft, ArrowRight } from '@clients/extension/src/icons'
-import type { VaultProps } from '@clients/extension/src/utils/interfaces'
-import {
-  getStoredVaults,
-  setStoredVaults,
-} from '@clients/extension/src/utils/storage'
-import { Button } from 'antd'
-import { useEffect, useState } from 'react'
+import { Button } from '@clients/extension/src/components/button'
+import { useAppNavigate } from '@clients/extension/src/navigation/hooks/useAppNavigate'
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { useSetCurrentVaultIdMutation } from '@core/ui/vault/mutations/useSetCurrentVaultIdMutation'
+import { VaultSigners } from '@core/ui/vault/signers'
+import { useCurrentVault } from '@core/ui/vault/state/currentVault'
+import { useVaults } from '@core/ui/vault/state/vaults'
+import { getVaultId } from '@core/ui/vault/Vault'
+import { ChevronLeftIcon } from '@lib/ui/icons/ChevronLeftIcon'
+import { VStack } from '@lib/ui/layout/Stack'
+import { List } from '@lib/ui/list'
+import { ListItem } from '@lib/ui/list/item'
+import { ListItemTag } from '@lib/ui/list/item/tag'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageFooter } from '@lib/ui/page/PageFooter'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { Text } from '@lib/ui/text'
 import { useTranslation } from 'react-i18next'
 
-import { appPaths } from '../../../../navigation'
-import { useAppNavigate } from '../../../../navigation/hooks/useAppNavigate'
-
-interface InitialState {
-  vault?: VaultProps
-  vaults: VaultProps[]
-}
-
-const Component = () => {
+export const VaultsPage = () => {
   const { t } = useTranslation()
-  const initialState: InitialState = { vaults: [] }
-  const [state, setState] = useState(initialState)
-  const { vault, vaults } = state
   const navigate = useAppNavigate()
-  const goBack = useGoBack()
+  const coreNavigate = useCoreNavigate()
+  const vaults = useVaults()
+  const vault = useCurrentVault()
+  const setCurrentVaultId = useSetCurrentVaultIdMutation()
 
-  const handleSelect = (uid: string) => {
-    setStoredVaults(
-      vaults.map(vault => ({ ...vault, active: vault.uid === uid }))
-    )
-      .then(() => {
-        goBack(appPaths.main)
-      })
-      .catch(error => {
-        console.error('Error setting stored vaults:', error)
-      })
+  const handleSelect = (id: string) => {
+    setCurrentVaultId.mutate(id)
+
+    navigate('root')
   }
 
-  const componentDidMount = (): void => {
-    getStoredVaults().then(vaults => {
-      const vault = vaults.find(({ active }) => active)
-
-      setState(prevState => ({ ...prevState, vault, vaults }))
-    })
-  }
-
-  useEffect(componentDidMount, [])
-
-  return vault ? (
-    <div className="layout vaults-page">
-      <div className="header">
-        <span className="heading">{t('choose_vault')}</span>
-        <ArrowLeft
-          className="icon icon-left"
-          onClick={() => goBack(appPaths.main)}
-        />
-      </div>
-      <div className="content">
-        <div className="list">
-          <div className="list-item">
-            <span className="label">{vault?.name}</span>
-            <span className="extra">
-              <span className="text">{t('active')}</span>
-            </span>
-          </div>
-        </div>
-        {vaults.length > 1 && (
-          <>
-            <span className="divider">{t('other_vaults')}</span>
-            <div className="list list-arrow list-action">
-              {vaults
-                .filter(({ uid }) => uid !== vault.uid)
-                .map(({ name, uid }) => (
-                  <button
-                    key={uid}
-                    onClick={() => handleSelect(uid)}
-                    className="list-item"
-                  >
-                    <span className="label">{name}</span>
-                    <ArrowRight className="action" />
-                  </button>
-                ))}
-            </div>
-          </>
+  return (
+    <VStack fullHeight>
+      <PageHeader
+        primaryControls={
+          <Button onClick={() => navigate('settings')} ghost>
+            <ChevronLeftIcon fontSize={20} />
+          </Button>
+        }
+        title={
+          <Text color="contrast" size={18} weight={500}>
+            {t('choose_vault')}
+          </Text>
+        }
+        hasBorder
+      />
+      <PageContent gap={24} flexGrow scrollable>
+        {vault && (
+          <List bordered>
+            <ListItem
+              extra={<ListItemTag status="success" title={t('active')} />}
+              title={vault.name}
+            />
+          </List>
         )}
-      </div>
-      <div className="footer">
+        {vaults.length > 1 && (
+          <VStack gap={12}>
+            <Text color="light" size={12} weight={500}>
+              {t('other_vaults')}
+            </Text>
+            <List>
+              {vaults
+                .filter(v => getVaultId(v) !== getVaultId(vault))
+                .map(v => (
+                  <ListItem
+                    extra={<VaultSigners vault={v} />}
+                    key={getVaultId(v)}
+                    onClick={() => handleSelect(getVaultId(v))}
+                    title={v.name}
+                    hoverable
+                    showArrow
+                  />
+                ))}
+            </List>
+          </VStack>
+        )}
+      </PageContent>
+      <PageFooter>
         <Button
-          onClick={() => navigate('import', { params: { from: 'vaults' } })}
+          onClick={() => coreNavigate('importVault')}
           shape="round"
+          size="large"
+          type="primary"
           block
         >
           {t('add_new_vault')}
         </Button>
-      </div>
-    </div>
-  ) : (
-    <></>
+      </PageFooter>
+    </VStack>
   )
 }
-
-export default Component

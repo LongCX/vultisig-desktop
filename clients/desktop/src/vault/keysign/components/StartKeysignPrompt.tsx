@@ -1,72 +1,53 @@
-import { KeysignPayload } from '@core/mpc/types/vultisig/keysign/v1/keysign_message_pb'
+import { KeysignMessagePayload } from '@core/mpc/keysign/keysignPayload/KeysignMessagePayload'
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { useCurrentVaultSecurityType } from '@core/ui/vault/state/currentVault'
 import { Button } from '@lib/ui/buttons/Button'
 import { VStack } from '@lib/ui/layout/Stack'
 import { IsDisabledProp, ValueProp } from '@lib/ui/props'
 import { useTranslation } from 'react-i18next'
 
-import { useAppNavigate } from '../../../navigation/hooks/useAppNavigate'
-import { useVaultServerStatus } from '../../state/currentVault'
-
-type StartKeysignPromptProps = ValueProp<KeysignPayload> & IsDisabledProp
+type StartKeysignPromptProps = ValueProp<KeysignMessagePayload> & IsDisabledProp
 
 export const StartKeysignPrompt = ({
   value: keysignPayload,
   isDisabled,
 }: StartKeysignPromptProps) => {
   const { t } = useTranslation()
-  const navigate = useAppNavigate()
-  const { hasServer, isBackup } = useVaultServerStatus()
+  const navigate = useCoreNavigate()
 
-  if (hasServer && !isBackup) {
-    return (
-      <VStack gap={20}>
-        <Button
-          onClick={() => {
-            navigate('fastKeysign', {
-              state: {
-                keysignPayload: {
-                  keysign: keysignPayload,
-                },
-              },
-            })
-          }}
-          isDisabled={isDisabled}
-        >
-          {t('fast_sign')}
-        </Button>
+  const securityType = useCurrentVaultSecurityType()
+
+  return (
+    <VStack gap={20}>
+      <Button
+        isDisabled={isDisabled}
+        onClick={() => {
+          navigate('keysign', {
+            state: {
+              securityType: 'secure',
+              keysignPayload,
+            },
+          })
+        }}
+      >
+        {t('sign')}
+      </Button>
+      {securityType === 'fast' && (
         <Button
           kind="outlined"
           isDisabled={isDisabled}
           onClick={() => {
             navigate('keysign', {
               state: {
-                keysignPayload: {
-                  keysign: keysignPayload,
-                },
+                securityType: 'fast',
+                keysignPayload,
               },
             })
           }}
         >
-          {t('paired_sign')}
+          {t('fast_sign')}
         </Button>
-      </VStack>
-    )
-  }
-
-  return (
-    <Button
-      isDisabled={isDisabled}
-      onClick={() => {
-        navigate('keysign', {
-          state: {
-            keysignPayload: {
-              keysign: keysignPayload,
-            },
-          },
-        })
-      }}
-    >
-      {t('start_transaction')}
-    </Button>
+      )}
+    </VStack>
   )
 }

@@ -5,15 +5,15 @@ import { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types'
 import { getReorderDestinationIndex } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index'
 import { Button } from '@lib/ui/buttons/Button'
 import { UnstyledButton } from '@lib/ui/buttons/UnstyledButton'
-import SquareAndPencilIcon from '@lib/ui/icons/SquareAndPencilIcon'
+import { SquarePenIcon } from '@lib/ui/icons/SquarePenIcon'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 import { Text } from '@lib/ui/text'
 import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AddressBookItem } from '../../../../../lib/types/address-book'
-import { PageHeaderBackButton } from '../../../../../ui/page/PageHeaderBackButton'
-import { PageHeaderTitle } from '../../../../../ui/page/PageHeaderTitle'
 import { useDeleteAddressBookItemMutation } from '../../../../mutations/useDeleteAddressBookItemMutation'
 import { useAddressBookItemsQuery } from '../../../../queries/useAddressBookItemsQuery'
 import { AddressBookPageHeader } from '../../AddressSelector.styles'
@@ -189,7 +189,7 @@ const AddressesListView = ({
             </UnstyledButton>
           ) : (
             <UnstyledButton onClick={onEditModeToggle}>
-              <SquareAndPencilIcon />
+              <SquarePenIcon />
             </UnstyledButton>
           )
         }

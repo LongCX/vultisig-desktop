@@ -1,8 +1,8 @@
 import { Coin } from '@core/chain/coin/Coin'
+import { ChainEntityIcon } from '@core/ui/chain/coin/icon/ChainEntityIcon'
+import { getCoinLogoSrc } from '@core/ui/chain/coin/icon/utils/getCoinLogoSrc'
 import { ValueProp } from '@lib/ui/props'
 
-import { ChainEntityIcon } from '../../../../chain/ui/ChainEntityIcon'
-import { getCoinLogoSrc } from '../../../../coin/logo/getCoinLogoSrc'
 import { ManageVaultCoin } from '../ManageVaultCoin'
 
 export const ManageVaultChainCoin = ({ value }: ValueProp<Coin>) => {

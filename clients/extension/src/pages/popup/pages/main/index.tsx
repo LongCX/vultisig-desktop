@@ -1,241 +1,141 @@
-import {
-  ArrowRight,
-  BrokenLink,
-  CircleInfo,
-  SettingsTwo,
-  Vultisig,
-} from '@clients/extension/src/icons'
-import { VaultProps } from '@clients/extension/src/utils/interfaces'
-import {
-  getIsPriority,
-  getStoredChains,
-  getStoredVaults,
-  setIsPriority,
-  setStoredChains,
-  setStoredVaults,
-} from '@clients/extension/src/utils/storage'
-import { chainFeeCoin } from '@core/chain/coin/chainFeeCoin'
-import { Button, Empty, message, Modal, Select, Switch, Tooltip } from 'antd'
-import { type FC, ReactNode, useEffect, useState } from 'react'
+import { Button } from '@clients/extension/src/components/button'
+import { useAppNavigate } from '@clients/extension/src/navigation/hooks/useAppNavigate'
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
+import { VaultSigners } from '@core/ui/vault/signers'
+import { useCurrentVault } from '@core/ui/vault/state/currentVault'
+import { LinkTwoIcon } from '@lib/ui/icons/LinkTwoIcon'
+import { SettingsIcon } from '@lib/ui/icons/SettingsIcon'
+import { WorldIcon } from '@lib/ui/icons/WorldIcon'
+import { VStack } from '@lib/ui/layout/Stack'
+import { List } from '@lib/ui/list'
+import { ListItem } from '@lib/ui/list/item'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageFooter } from '@lib/ui/page/PageFooter'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { Text } from '@lib/ui/text'
+import { getColor } from '@lib/ui/theme/getters'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import styled, { useTheme } from 'styled-components'
 
-import { appPaths } from '../../../../navigation'
-import { useAppNavigate } from '../../../../navigation/hooks/useAppNavigate'
-import { isSupportedChain } from '../../../../utils/constants'
+const ConnectedAppStatus = styled.span<{ connected: boolean }>`
+  background-color: ${({ connected }) =>
+    getColor(connected ? 'alertSuccess' : 'alertInfo')};
+  border: solid 4px ${getColor('buttonBackgroundDisabled')};
+  border-radius: 50%;
+  height: 16px;
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  width: 16px;
+`
 
-interface SelectOption {
-  value: string
-  label: ReactNode
-}
+const ConnectedApp = styled(Button)`
+  background-color: ${getColor('buttonBackgroundDisabled')};
+  border: solid 1px ${getColor('borderLight')};
+  border-radius: 50%;
+  height: 36px;
+  position: relative;
+  width: 36px;
+`
 
-interface InitialState {
-  isPriority: boolean
-  networkOptions: SelectOption[]
-  selectedNetwork?: SelectOption
-  vault?: VaultProps
-}
-
-const ConnectedApp: FC<{ domain: string; onUnlink: () => void }> = ({
-  domain,
-  onUnlink,
-}) => {
+export const MainPage = () => {
   const { t } = useTranslation()
-  const [sld, tld] = domain.split('.').slice(-2)
+  const { colors } = useTheme()
+  const vault = useCurrentVault()
+  const appNavigate = useAppNavigate()
+  const navigate = useCoreNavigate()
 
   return (
-    <div className="item">
-      <span className="name">{`${sld}.${tld}`}</span>
-      <button className="btn" onClick={onUnlink}>
-        <BrokenLink />
-        {t('unlink')}
-      </button>
-    </div>
-  )
-}
-
-const Component = () => {
-  const { t } = useTranslation()
-  const initialState: InitialState = { isPriority: false, networkOptions: [] }
-  const [state, setState] = useState(initialState)
-  const { isPriority, networkOptions, selectedNetwork, vault } = state
-  const [modal, contextHolder] = Modal.useModal()
-  const navigate = useAppNavigate()
-  const [messageApi, messageContextHolder] = message.useMessage()
-
-  const handleUnlink = (app: string): void => {
-    modal.confirm({
-      title: 'Confirm',
-      width: 312,
-      onOk() {
-        getStoredVaults().then(vaults => {
-          setStoredVaults(
-            vaults.map(item =>
-              item.uid === vault?.uid
-                ? { ...item, apps: item.apps?.filter(item => item !== app) }
-                : item
-            )
-          ).then(() => {
-            initComponent()
-          })
-        })
-      },
-    })
-  }
-
-  const handleViewinWeb = () => {
-    const VULTISIG_WEB_URL = 'https://airdrop.vultisig.com'
-    const url = `${VULTISIG_WEB_URL}/redirect/${vault?.publicKeyEcdsa}/${vault?.publicKeyEddsa}`
-    chrome.tabs.create({ url })
-  }
-
-  const getCurrentNetwork = (options: SelectOption[]) => {
-    getStoredChains().then(chains => {
-      const activeChain = chains.find(({ active }) => active)
-
-      const selectedNetwork = options.find(
-        option => option.value === activeChain?.chain
-      )
-
-      setState(prevState => ({ ...prevState, selectedNetwork }))
-    })
-  }
-
-  const handleChangeNetwork = (selectedOption: SelectOption) => {
-    const selectedNetwork = networkOptions.find(
-      option => option.value === String(selectedOption)
-    )
-    if (selectedNetwork) {
-      setStoredChains(
-        Object.values(chainFeeCoin)
-          .filter(chain => isSupportedChain(chain.chain))
-          .map(chain => ({
-            ...chain,
-            active: chain.chain === selectedNetwork.value,
-          }))
-      ).then(() => {
-        setState(prevState => ({ ...prevState, selectedNetwork }))
-      })
-    }
-  }
-
-  const handlePriority = (checked: boolean) => {
-    setIsPriority(checked).then(() => {
-      setState(prevState => ({ ...prevState, isPriority: checked }))
-
-      showReloadMessage()
-    })
-  }
-
-  const showReloadMessage = () => {
-    messageApi.open({
-      type: 'info',
-      content: t('reload_message'),
-    })
-  }
-
-  const initComponent = (): void => {
-    getStoredVaults().then(vaults => {
-      const vault = vaults.find(({ active }) => active)
-
-      if (vault) {
-        const supportedChains = vault.chains
-        const networkOptions = supportedChains.map(chain => ({
-          value: chain.chain,
-          label: (
-            <>
-              <div className="chain-item">
-                <img
-                  src={`/chains/${chain.chain.toLowerCase()}.svg`}
-                  alt={chain.chain}
-                  style={{ width: 20, marginRight: 8 }}
-                />
-                {chain.chain}
-              </div>
-              <span className="address">{chain.address}</span>
-            </>
-          ),
-        }))
-
-        setState(prevState => ({ ...prevState, networkOptions }))
-
-        getCurrentNetwork(networkOptions)
-
-        getIsPriority().then(isPriority => {
-          setState(prevState => ({ ...prevState, isPriority, vault }))
-        })
-      }
-    })
-  }
-
-  useEffect(initComponent, [])
-
-  return vault ? (
-    <>
-      <div className="layout main-page">
-        <div className="header">
-          <Vultisig className="logo" />
-          <span className="logo-type">{t('vultisig')}</span>
-          <SettingsTwo
-            className="icon icon-right"
-            onClick={() => navigate('settings.root')}
-          />
-        </div>
-        <div className="content">
-          <div className="list list-action list-arrow">
-            <Link to={appPaths.vaults} state={true} className="list-item">
-              <span className="label">{vault.name}</span>
-              <ArrowRight className="action" />
-            </Link>
-          </div>
-          <div className="view">
-            <Button onClick={handleViewinWeb} block>
-              {t('view_in_airdrop')}
-            </Button>
-          </div>
-          <span className="divider">{t('current_network')}</span>
-          <div>
-            <Select
-              className="select"
-              options={networkOptions}
-              value={selectedNetwork}
-              onChange={value => handleChangeNetwork(value)}
+    <VStack fullHeight>
+      <PageHeader
+        primaryControls={
+          <ConnectedApp ghost>
+            <WorldIcon fontSize={20} stroke={colors.textExtraLight.toHex()} />
+            <ConnectedAppStatus connected />
+          </ConnectedApp>
+        }
+        secondaryControls={
+          <Button ghost>
+            <SettingsIcon
+              fontSize={24}
+              onClick={() => appNavigate('settings')}
             />
-          </div>
-          <span className="divider">{t('connected_apps')}</span>
-          <div className="apps">
-            <div className="action">
-              <div className="title">
-                {t('prioritize_vulticonnect')}
-                <Tooltip title={t('prioritize_vulticonnect_hint')}>
-                  <CircleInfo className="icon" />
-                </Tooltip>
-              </div>
-              <Switch
-                checked={isPriority}
-                onChange={checked => handlePriority(checked)}
+          </Button>
+        }
+        title={
+          <Text
+            color="contrast"
+            size={18}
+            style={{ maxWidth: '50%' }}
+            weight={500}
+            cropped
+          >
+            {vault.name}
+          </Text>
+        }
+        hasBorder
+      />
+      <PageContent gap={24} flexGrow scrollable>
+        <List>
+          <ListItem
+            extra={<VaultSigners vault={vault} />}
+            onClick={() => navigate('vaults')}
+            title={vault.name}
+            hoverable
+          />
+        </List>
+        <VStack gap={12}>
+          <Text color="light" size={12} weight={500}>
+            {t('portfolio_overview')}
+          </Text>
+          {/* TODO: Fetch addresess */}
+          {/*  
+          <List>
+            {vault.chains.map(({ address, chain }) => (
+              <ListItem
+                description={
+                  address ? (
+                    <MiddleTruncate text={address} width={80} />
+                  ) : undefined
+                }
+                extra={
+                  <VStack gap={4} alignItems="end">
+                    <Text weight={500} size={14} color="contrast">
+                      $1,801.15
+                    </Text>
+                    <Text weight={500} size={12} color="light">
+                      2 assets
+                    </Text>
+                  </VStack>
+                }
+                icon={
+                  <ChainEntityIcon
+                    value={getChainEntityIconSrc(chain)}
+                    style={{ fontSize: 36 }}
+                  />
+                }
+                key={chain}
+                title={chain}
+                hoverable
+                showArrow
               />
-            </div>
-            {vault?.apps?.length ? (
-              vault.apps.map(app => (
-                <ConnectedApp
-                  key={app}
-                  domain={app}
-                  onUnlink={() => handleUnlink(app)}
-                />
-              ))
-            ) : (
-              <Empty description={t('no_connected_app')} />
-            )}
-          </div>
-        </div>
-      </div>
-      {messageContextHolder}
-      {contextHolder}
-    </>
-  ) : (
-    <></>
+            ))}
+          </List>
+          */}
+        </VStack>
+      </PageContent>
+      <PageFooter>
+        <Button
+          onClick={() => appNavigate('manageChains')}
+          shape="round"
+          size="large"
+          type="primary"
+          block
+        >
+          <LinkTwoIcon fontSize={16} strokeWidth={2} />
+          {t('manage_chains')}
+        </Button>
+      </PageFooter>
+    </VStack>
   )
 }
-
-export default Component

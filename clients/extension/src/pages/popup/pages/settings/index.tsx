@@ -1,125 +1,136 @@
 import packageJson from '@clients/extension/package.json'
-import useGoBack from '@clients/extension/src/hooks/go-back'
-import {
-  ArrowLeft,
-  ArrowRight,
-  CircleDollar,
-  CircleHelp,
-  SettingsOne,
-  Translate,
-  Vultisig,
-} from '@clients/extension/src/icons'
-import { Currency } from '@clients/extension/src/utils/constants'
-import { getStoredCurrency } from '@clients/extension/src/utils/storage'
+import { Button } from '@clients/extension/src/components/button'
+import { useLanguageQuery } from '@clients/extension/src/i18n/state/language'
+import { useAppNavigate } from '@clients/extension/src/navigation/hooks/useAppNavigate'
 import { languageName } from '@core/ui/i18n/Language'
+import { useFiatCurrency } from '@core/ui/state/fiatCurrency'
+import { ChevronLeftIcon } from '@lib/ui/icons/ChevronLeftIcon'
+import { CircleDollarSignIcon } from '@lib/ui/icons/CircleDollarSignIcon'
+import { CircleHelpIcon } from '@lib/ui/icons/CircleHelpIcon'
+import { ExpandIcon } from '@lib/ui/icons/ExpandIcon'
+import { LanguagesIcon } from '@lib/ui/icons/LanguagesIcon'
+import { SettingsIcon } from '@lib/ui/icons/SettingsIcon'
+import { VultisigLogoIcon } from '@lib/ui/icons/VultisigLogoIcon'
+import { VStack } from '@lib/ui/layout/Stack'
+import { List } from '@lib/ui/list'
+import { ListItem } from '@lib/ui/list/item'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageFooter } from '@lib/ui/page/PageFooter'
+import { PageHeader } from '@lib/ui/page/PageHeader'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
-import { useEffect, useState } from 'react'
+import { Text } from '@lib/ui/text'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 
-import { useLanguageQuery } from '../../../../i18n/state/language'
-import { appPaths } from '../../../../navigation'
-
-interface InitialState {
-  currency: Currency
-}
-
-const Component = () => {
+export const SettingsPage = () => {
   const { t } = useTranslation()
-  const initialState: InitialState = {
-    currency: Currency.USD,
-  }
-  const [state, setState] = useState(initialState)
-  const { currency } = state
-  const goBack = useGoBack()
-
-  const componentDidMount = (): void => {
-    getStoredCurrency().then(currency => {
-      setState(prevState => ({ ...prevState, currency }))
-    })
-  }
-
+  const navigate = useAppNavigate()
+  const currency = useFiatCurrency()
   const languageQuery = useLanguageQuery()
 
-  useEffect(componentDidMount, [])
-
   return (
-    <div className="layout settings-page">
-      <div className="header">
-        <span className="heading">{t('settings')}</span>
-        <ArrowLeft
-          className="icon icon-left"
-          onClick={() => goBack(appPaths.main)}
-        />
-      </div>
-      <div className="content">
-        <div className="list list-arrow list-action list-icon">
-          <Link to={appPaths.settings.vault} state={true} className="list-item">
-            <SettingsOne className="icon" />
-            <span className="label">{t('vault_settings')}</span>
-            <ArrowRight className="action" />
-          </Link>
-          <MatchQuery
-            value={languageQuery}
-            success={language => (
-              <Link
-                to={appPaths.settings.language}
-                state={true}
-                className="list-item"
-              >
-                <Translate className="icon" />
-                <span className="label">{t('language')}</span>
-                <span className="extra">{languageName[language]}</span>
-                <ArrowRight className="action" />
-              </Link>
-            )}
-          />
-          <Link
-            to={appPaths.settings.currency}
-            state={true}
-            className="list-item"
-          >
-            <CircleDollar className="icon" />
-            <span className="label">{t('currency')}</span>
-            <span className="extra">{currency}</span>
-            <ArrowRight className="action" />
-          </Link>
-          <a
-            href="https://vultisig.com/faq"
-            rel="noopener noreferrer"
-            target="_blank"
-            className="list-item"
-          >
-            <CircleHelp className="icon" />
-            <span className="label">{t('faq')}</span>
-            <ArrowRight className="action" />
-          </a>
-        </div>
-        <span className="divider">{t('other')}</span>
-        <div className="list list-action list-icon">
-          <a
-            href="https://vultisig.com/vult"
-            rel="noopener noreferrer"
-            target="_blank"
-            className="list-item"
-          >
-            <Vultisig className="icon" />
-            <span className="label">{t('vult_token')}</span>
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <a
-          target="_blank"
-          href="https://chromewebstore.google.com/detail/vulticonnect/ggafhcdaplkhmmnlbfjpnnkepdfjaelb"
-          className="version"
-          rel="noreferrer"
+    <VStack fullHeight>
+      <PageHeader
+        primaryControls={
+          <Button onClick={() => navigate('root')} ghost>
+            <ChevronLeftIcon fontSize={20} />
+          </Button>
+        }
+        title={
+          <Text color="contrast" size={18} weight={500}>
+            {t('settings')}
+          </Text>
+        }
+        hasBorder
+      />
+      <PageContent gap={24} flexGrow scrollable>
+        <VStack gap={12}>
+          <Text color="light" size={12} weight={500}>
+            {t('vault_specific')}
+          </Text>
+          <List>
+            <ListItem
+              icon={<SettingsIcon fontSize={20} />}
+              onClick={() => navigate('vaultSettings')}
+              title={t('vault_settings')}
+              hoverable
+              showArrow
+            />
+          </List>
+        </VStack>
+        <VStack gap={12}>
+          <Text color="light" size={12} weight={500}>
+            {t('general')}
+          </Text>
+          <List>
+            <MatchQuery
+              success={language => (
+                <ListItem
+                  extra={languageName[language]}
+                  icon={<LanguagesIcon fontSize={20} />}
+                  onClick={() => navigate('languageSettings')}
+                  title={t('language')}
+                  hoverable
+                  showArrow
+                />
+              )}
+              value={languageQuery}
+            />
+            <ListItem
+              extra={currency.toUpperCase()}
+              icon={<CircleDollarSignIcon fontSize={20} />}
+              onClick={() => navigate('currencySettings')}
+              title={t('currency')}
+              hoverable
+              showArrow
+            />
+            <ListItem
+              icon={<CircleHelpIcon fontSize={20} />}
+              onClick={() => open('https://vultisig.com/faq', '_blank')}
+              title={t('faq')}
+              hoverable
+              showArrow
+            />
+            <ListItem
+              icon={<ExpandIcon fontSize={20} />}
+              onClick={() =>
+                open(
+                  `chrome-extension://${chrome.runtime.id}/popup.html`,
+                  '_blank'
+                )
+              }
+              title={t('expand_view')}
+              hoverable
+              showArrow
+            />
+          </List>
+        </VStack>
+        <VStack gap={12}>
+          <Text color="light" size={12} weight={500}>
+            {t('other')}
+          </Text>
+          <List>
+            <ListItem
+              icon={<VultisigLogoIcon fontSize={20} />}
+              onClick={() => open('https://vultisig.com/vult', '_blank')}
+              title={t('vult_token')}
+              hoverable
+            />
+          </List>
+        </VStack>
+      </PageContent>
+      <PageFooter alignItems="center">
+        <Button
+          onClick={() =>
+            open(
+              'https://chromewebstore.google.com/detail/vulticonnect/ggafhcdaplkhmmnlbfjpnnkepdfjaelb',
+              '_blank'
+            )
+          }
+          ghost
         >
           VULTICONNECT V{packageJson.version}
-        </a>
-      </div>
-    </div>
+        </Button>
+      </PageFooter>
+    </VStack>
   )
 }
-
-export default Component

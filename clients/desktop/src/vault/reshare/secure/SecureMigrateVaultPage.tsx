@@ -1,12 +1,19 @@
-import { KeygenType } from '@core/mpc/keygen/KeygenType'
+import { ReshareSecureVaultFlow } from '@core/ui/mpc/keygen/reshare/ReshareSecureVaultFlow'
+import { ReshareVaultFlowProviders } from '@core/ui/mpc/keygen/reshare/ReshareVaultFlowProviders'
+import { CurrentKeygenTypeProvider } from '@core/ui/mpc/keygen/state/currentKeygenType'
 
-import { SecureVaultKeygenFlow } from '../../keygen/shared/SecureVaultKeygenFlow'
-import { CurrentKeygenTypeProvider } from '../../keygen/state/currentKeygenType'
+import { MpcMediatorManager } from '../../../mpc/serverType/MpcMediatorManager'
+import { MigrateVaultKeygenActionProvider } from '../../migrate/MigrateVaultKeygenActionProvider'
 
 export const SecureMigrateVaultPage = () => {
   return (
-    <CurrentKeygenTypeProvider value={KeygenType.Migrate}>
-      <SecureVaultKeygenFlow />
-    </CurrentKeygenTypeProvider>
+    <ReshareVaultFlowProviders>
+      <CurrentKeygenTypeProvider value={'migrate'}>
+        <MigrateVaultKeygenActionProvider>
+          <MpcMediatorManager />
+          <ReshareSecureVaultFlow />
+        </MigrateVaultKeygenActionProvider>
+      </CurrentKeygenTypeProvider>
+    </ReshareVaultFlowProviders>
   )
 }

@@ -1,110 +1,58 @@
-import useGoBack from '@clients/extension/src/hooks/go-back'
-import { ArrowLeft } from '@clients/extension/src/icons'
-import { Currency, currencyName } from '@clients/extension/src/utils/constants'
+import { Button } from '@clients/extension/src/components/button'
+import { useAppNavigate } from '@clients/extension/src/navigation/hooks/useAppNavigate'
+import { fiatCurrencies } from '@core/config/FiatCurrency'
 import {
-  getStoredCurrency,
-  setStoredCurrency,
-} from '@clients/extension/src/utils/storage'
-import { useEffect, useState } from 'react'
+  useFiatCurrency,
+  useSetFiatCurrencyMutation,
+} from '@core/ui/state/fiatCurrency'
+import { ChevronLeftIcon } from '@lib/ui/icons/ChevronLeftIcon'
+import { VStack } from '@lib/ui/layout/Stack'
+import { List } from '@lib/ui/list'
+import { ListItem } from '@lib/ui/list/item'
+import { ListItemTag } from '@lib/ui/list/item/tag'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { Text } from '@lib/ui/text'
 import { useTranslation } from 'react-i18next'
 
-import { appPaths } from '../../../../navigation'
-
-interface InitialState {
-  currency: Currency
-}
-
-const Component = () => {
+export const CurrencyPage = () => {
   const { t } = useTranslation()
-  const initialState: InitialState = { currency: Currency.USD }
-  const [state, setState] = useState(initialState)
-  const { currency } = state
-  const goBack = useGoBack()
-
-  const changeCurrency = (currency: Currency) => {
-    setStoredCurrency(currency).then(() => {
-      setState(prevState => ({ ...prevState, currency }))
-
-      goBack(appPaths.settings.root)
-    })
-  }
-
-  const componentDidMount = (): void => {
-    getStoredCurrency().then(currency => {
-      setState(prevState => ({ ...prevState, currency }))
-    })
-  }
-
-  useEffect(componentDidMount, [])
-
-  const data = [
-    {
-      key: Currency.USD,
-      title: currencyName[Currency.USD],
-    },
-    {
-      key: Currency.AUD,
-      title: currencyName[Currency.AUD],
-    },
-    {
-      key: Currency.CAD,
-      title: currencyName[Currency.CAD],
-    },
-    {
-      key: Currency.SGD,
-      title: currencyName[Currency.SGD],
-    },
-    {
-      key: Currency.EUR,
-      title: currencyName[Currency.EUR],
-    },
-    {
-      key: Currency.RUB,
-      title: currencyName[Currency.RUB],
-    },
-    {
-      key: Currency.GBP,
-      title: currencyName[Currency.GBP],
-    },
-    {
-      key: Currency.JPY,
-      title: currencyName[Currency.JPY],
-    },
-    {
-      key: Currency.CNY,
-      title: currencyName[Currency.CNY],
-    },
-    {
-      key: Currency.SEK,
-      title: currencyName[Currency.SEK],
-    },
-  ]
+  const navigate = useAppNavigate()
+  const currencyValue = useFiatCurrency()
+  const currencyMutation = useSetFiatCurrencyMutation()
 
   return (
-    <div className="layout currency-page">
-      <div className="header">
-        <span className="heading">{t('currency')}</span>
-        <ArrowLeft
-          className="icon icon-left"
-          onClick={() => goBack(appPaths.settings.root)}
-        />
-      </div>
-      <div className="content">
-        <div className="list list-action">
-          {data.map(({ key, title }) => (
-            <button
+    <VStack fullHeight>
+      <PageHeader
+        hasBorder
+        primaryControls={
+          <Button onClick={() => navigate('settings')} ghost>
+            <ChevronLeftIcon fontSize={20} />
+          </Button>
+        }
+        title={
+          <Text color="contrast" size={18} weight={500}>
+            {t('currency')}
+          </Text>
+        }
+      />
+      <PageContent flexGrow scrollable>
+        <List>
+          {fiatCurrencies.map(key => (
+            <ListItem
+              extra={
+                key === currencyValue && (
+                  <ListItemTag status="success" title={t('active')} />
+                )
+              }
               key={key}
-              className={`list-item${key === currency ? ' active' : ''}`}
-              onClick={() => changeCurrency(key)}
-            >
-              <span className="label">{title}</span>
-              <span className="extra">{key}</span>
-            </button>
+              onClick={() => currencyMutation.mutate(key)}
+              title={key.toUpperCase()}
+              hoverable
+            />
           ))}
-        </div>
-      </div>
-    </div>
+        </List>
+      </PageContent>
+    </VStack>
   )
 }
-
-export default Component

@@ -260,16 +260,6 @@ export const hr = {
   save: 'Spremi',
   settings_vault_page_footer: 'VULTISIG APLIKACIJA V',
   clear: 'Očisti',
-  vault_settings_currency_settings_title_usd: 'USD',
-  vault_settings_currency_settings_title_aud: 'AUD',
-  vault_settings_currency_settings_title_eur: 'EUR',
-  vault_settings_currency_settings_title_gbp: 'GBP',
-  vault_settings_currency_settings_title_chf: 'CHF',
-  vault_settings_currency_settings_title_jpy: 'JPY',
-  vault_settings_currency_settings_title_cny: 'CNY',
-  vault_settings_currency_settings_title_cad: 'CAD',
-  vault_settings_currency_settings_title_sgd: 'SGD',
-  vault_settings_currency_settings_title_sek: 'SEK',
   faq_setup_crypto_vault_title: 'Kako postaviti svoj sigurni kripto trezor?',
   faq_setup_crypto_vault_content:
     'Prikupite 2 ili više svojih uređaja i povežite ih s lokalnim Wi-Fi-jem, pristupnom točkom ili internetom. Zatim ih jednostavno uparite putem QR koda i stvorite novi trezor. Tada možete poslati sredstva.',
@@ -733,7 +723,7 @@ export const hr = {
   timeout_error: 'Pogreška isteka vremena',
   signing_timeout_description:
     'Proces potpisivanja je premašio vremensko ograničenje. Molimo pokušajte ponovo!',
-  contine_in_new_window: 'Nastavite u otvorenom prozoru',
+  continue_in_new_window: 'Nastavite u otvorenom prozoru',
   close: 'Zatvoriti',
   copy_tx: 'KOPIRAJ TX',
   current_network: 'Trenutna mreža',
@@ -790,4 +780,14 @@ export const hr = {
   scan_with_device_name: 'Skeniraj s {{name}}',
   join_upgrade: 'Pridružite se nadogradnji',
   waiting_for_upgrade_start: 'Čeka se početak nadogradnje...',
+  vault_name_description:
+    'Uvijek možete preimenovati svoj trezor kasnije u postavkama',
+  upload_file_or_drag_and_drop:
+    'Učitajte datoteku ili povucite i ispustite ovdje',
+  upload_vulttshare: 'Učitajte svoj Vultishare QR',
+  failed_to_start_keysign: 'Pokretanje Keysigna nije uspjelo',
+  failed_to_retrieve_addresses: 'Dohvaćanje adresa nije uspjelo',
+  vulti_share_not_saved_hint:
+    'Ako još niste spremili svoj VultiShare QR, idite na aplikaciju i kliknite na QR ikonu u gornjem desnom kutu.',
+  version: 'Verzija',
 }

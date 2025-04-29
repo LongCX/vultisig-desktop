@@ -1,20 +1,20 @@
+import { TxOverviewPanel } from '@core/ui/chain/tx/TxOverviewPanel'
+import {
+  TxOverviewColumn,
+  TxOverviewRow,
+  TxOverviewRowDepositsFlow,
+} from '@core/ui/chain/tx/TxOverviewRow'
+import { useCurrentVaultCoin } from '@core/ui/vault/state/currentVaultCoins'
+import { WithProgressIndicator } from '@lib/ui/flow/WithProgressIndicator'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 import { Text } from '@lib/ui/text'
 import { FC } from 'react'
 import { FieldValues } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
-import { TxOverviewPanel } from '../../../chain/tx/components/TxOverviewPanel'
-import {
-  TxOverviewColumn,
-  TxOverviewRow,
-  TxOverviewRowDepositsFlow,
-} from '../../../chain/tx/components/TxOverviewRow'
-import { PageContent } from '../../../ui/page/PageContent'
-import { PageHeader } from '../../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
-import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator'
-import { useCurrentVaultCoin } from '../../state/currentVault'
 import { ChainAction } from '../ChainAction'
 import { DepositConfirmButton } from '../DepositConfirmButton'
 import { getRequiredFieldsPerChainAction } from '../DepositForm/chainOptionsConfig'

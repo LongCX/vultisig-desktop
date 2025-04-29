@@ -7,6 +7,7 @@ import {
   Messaging,
   SendTransactionResponse,
 } from '@clients/extension/src/utils/interfaces'
+import { VersionedTransaction } from '@solana/web3.js'
 
 const isArray = (arr: any): arr is any[] => {
   return Array.isArray(arr)
@@ -30,7 +31,7 @@ export const calculateWindowPosition = (
   currentWindow: chrome.windows.Window
 ) => {
   const height = 639
-  const width = 376
+  const width = 416
   let left = 0
   let top = 0
 
@@ -125,4 +126,14 @@ export const processBackgroundResponse = (
       return result
     }
   }
+}
+
+export function isVersionedTransaction(tx: any): tx is VersionedTransaction {
+  return (
+    typeof tx === 'object' &&
+    'version' in tx &&
+    typeof tx.version === 'number' &&
+    'message' in tx &&
+    'addressTableLookups' in tx.message
+  )
 }

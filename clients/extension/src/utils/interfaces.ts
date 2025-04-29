@@ -2,11 +2,11 @@ import { ThorchainProviderMethod } from '@clients/extension/src/types/thorchain'
 import { ThorchainProviderResponse } from '@clients/extension/src/types/thorchain'
 import { Chain } from '@core/chain/Chain'
 import { ParsedMemoParams } from '@core/chain/chains/evm/tx/getParsedMemo'
-import { KeysignResponse } from '@core/chain/tx/signature/generateSignature'
+import { KeysignSignature } from '@core/mpc/keysign/KeysignSignature'
+import { IMsgTransfer } from '@core/mpc/keysign/preSignedInputData/ibc/IMsgTransfer'
+import { Vault as VaultCore } from '@core/ui/vault/Vault'
 import { WalletCore } from '@trustwallet/wallet-core'
 import { TransactionResponse } from 'ethers'
-
-import { Currency } from './constants'
 
 export namespace Messaging {
   export namespace Chain {
@@ -21,12 +21,12 @@ export namespace Messaging {
 
   export namespace GetVault {
     export type Request = any
-    export type Response = VaultProps | undefined
+    export type Response = Vault | undefined
   }
 
   export namespace GetVaults {
     export type Request = any
-    export type Response = VaultProps[]
+    export type Response = Vault[]
   }
 
   export namespace SetPriority {
@@ -43,7 +43,6 @@ export interface AccountsProps {
 export interface ChainProps {
   active?: boolean
   address?: string
-  cmcId?: number
   decimals: number
   derivationKey?: string
   id: string
@@ -56,31 +55,10 @@ export interface SendTransactionResponse {
   txResponse: string
 }
 
-export interface CurrencyRef {
-  [Currency.AUD]: string
-  [Currency.CAD]: string
-  [Currency.CNY]: string
-  [Currency.EUR]: string
-  [Currency.GBP]: string
-  [Currency.JPY]: string
-  [Currency.RUB]: string
-  [Currency.SEK]: string
-  [Currency.SGD]: string
-  [Currency.USD]: string
-}
-
 interface CustomMessage {
   method: string
   address: string
   message: string
-}
-
-export interface SignatureProps {
-  Msg: string
-  R: string
-  S: string
-  DerSignature: string
-  RecoveryID: string
 }
 
 export namespace TransactionType {
@@ -171,6 +149,7 @@ export interface TransactionDetails {
     maxFeePerGas?: string
     maxPriorityFeePerGas?: string
   }
+  ibcTransaction?: IMsgTransfer
 }
 
 export interface ITransaction {
@@ -197,24 +176,21 @@ export interface ITransaction {
   raw?: any
 }
 
-export interface VaultProps {
-  active?: boolean
-  apps?: string[]
-  chains: ChainProps[]
-  hexChainCode: string
-  name: string
-  publicKeyEcdsa: string
-  publicKeyEddsa: string
-  selected?: boolean
+export type Vault = VaultCore & {
+  // Keep legacy fields temporarily (to be removed later)
+  //TODO: active chain removed, other properties will be extracted in separate PRs
   transactions: ITransaction[]
+  apps?: string[]
+  selected?: boolean
+  chains: ChainProps[]
   uid: string
 }
 
 export interface SignedTransaction {
   inputData?: Uint8Array
-  signatures: Record<string, KeysignResponse>
+  signatures: Record<string, KeysignSignature>
   transaction?: ITransaction
-  vault?: VaultProps
+  vault?: Vault
   walletCore: WalletCore
 }
 

@@ -273,16 +273,6 @@ export const it = {
   save: 'Salva',
   settings_vault_page_footer: 'APP VULTISIG V',
   clear: 'Cancella',
-  vault_settings_currency_settings_title_usd: 'USD',
-  vault_settings_currency_settings_title_aud: 'AUD',
-  vault_settings_currency_settings_title_eur: 'EUR',
-  vault_settings_currency_settings_title_gbp: 'GBP',
-  vault_settings_currency_settings_title_chf: 'CHF',
-  vault_settings_currency_settings_title_jpy: 'JPY',
-  vault_settings_currency_settings_title_cny: 'CNY',
-  vault_settings_currency_settings_title_cad: 'CAD',
-  vault_settings_currency_settings_title_sgd: 'SGD',
-  vault_settings_currency_settings_title_sek: 'SEK',
   faq_setup_crypto_vault_title:
     'Come configuro la mia cassaforte sicura per criptovalute?',
   faq_setup_crypto_vault_content:
@@ -749,7 +739,7 @@ export const it = {
   timeout_error: 'Errore di timeout',
   signing_timeout_description:
     'Il processo di firma ha superato il limite di tempo. Riprova!',
-  contine_in_new_window: 'Continua nella finestra aperta',
+  continue_in_new_window: 'Continua nella finestra aperta',
   close: 'Vicino',
   copy_tx: 'COPIA TX',
   current_network: 'Rete attuale',
@@ -807,4 +797,13 @@ export const it = {
   scan_with_device_name: 'Scansiona con {{name}}',
   join_upgrade: "Unisciti all'aggiornamento",
   waiting_for_upgrade_start: "In attesa dell'inizio dell'aggiornamento...",
+  vault_name_description:
+    'Puoi sempre rinominare il tuo vault in seguito nelle impostazioni',
+  upload_file_or_drag_and_drop: 'Carica il file o trascinalo qui',
+  upload_vulttshare: 'Carica il tuo QR Vultishare',
+  failed_to_start_keysign: 'Impossibile avviare Keysign',
+  failed_to_retrieve_addresses: 'Impossibile recuperare gli indirizzi',
+  vulti_share_not_saved_hint:
+    "Se non hai ancora salvato il tuo codice QR VultiShare, vai all'app e clicca sull'icona del QR nell'angolo in alto a destra.",
+  version: 'Versione',
 }

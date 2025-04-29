@@ -16,14 +16,6 @@ export type OnBackProp = {
   onBack: () => void
 }
 
-export type OnForwardProp = {
-  onForward: () => void
-}
-
-export type ClassNameProp = {
-  className?: string
-}
-
 export type OnClickProp = {
   onClick: () => void
 }
@@ -95,4 +87,8 @@ export type SvgProps = SVGProps<SVGSVGElement>
 
 export type MessageProp = {
   message: ReactNode
+}
+
+export type RenderProp = {
+  render: () => ReactNode
 }

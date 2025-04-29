@@ -1,7 +1,27 @@
 import { FC, useEffect, useRef, useState } from 'react'
+import styled, { css } from 'styled-components'
 
-interface ComponentProps {
+const StyledTruncate = styled.span`
+  position: absolute;
+  visibility: hidden;
+`
+
+const StyledMiddleTruncate = styled.span<{ width?: number }>`
+  display: block;
+  position: relative;
+  ${({ width }) => {
+    return width
+      ? css`
+          width: ${width}px;
+        `
+      : css``
+  }}
+`
+
+interface MiddleTruncateProps {
+  onClick?: () => void
   text: string
+  width?: number
 }
 
 interface InitialState {
@@ -10,7 +30,11 @@ interface InitialState {
   truncating: boolean
 }
 
-const Component: FC<ComponentProps> = ({ text }) => {
+export const MiddleTruncate: FC<MiddleTruncateProps> = ({
+  onClick,
+  text,
+  width,
+}) => {
   const initialState: InitialState = {
     counter: 0,
     ellipsis: '',
@@ -19,6 +43,10 @@ const Component: FC<ComponentProps> = ({ text }) => {
   const [state, setState] = useState(initialState)
   const { counter, ellipsis, truncating } = state
   const elmRef = useRef<HTMLSpanElement>(null)
+
+  const handleClick = () => {
+    if (onClick) onClick()
+  }
 
   const ellipsisDidUpdate = (): void => {
     if (elmRef.current) {
@@ -51,14 +79,26 @@ const Component: FC<ComponentProps> = ({ text }) => {
       truncating: true,
     }))
   }
+
   useEffect(ellipsisDidUpdate, [ellipsis, counter, text])
   useEffect(componentDidUpdate, [text])
 
-  return (
-    <span ref={elmRef} className="middle-truncate">
-      {truncating ? <span>{ellipsis}</span> : ellipsis}
-    </span>
+  return onClick ? (
+    <StyledMiddleTruncate
+      ref={elmRef}
+      onClick={handleClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick()
+      }}
+      tabIndex={0}
+      role="button"
+      width={width}
+    >
+      {truncating ? <StyledTruncate>{ellipsis}</StyledTruncate> : ellipsis}
+    </StyledMiddleTruncate>
+  ) : (
+    <StyledMiddleTruncate ref={elmRef} width={width}>
+      {truncating ? <StyledTruncate>{ellipsis}</StyledTruncate> : ellipsis}
+    </StyledMiddleTruncate>
   )
 }
-
-export default Component

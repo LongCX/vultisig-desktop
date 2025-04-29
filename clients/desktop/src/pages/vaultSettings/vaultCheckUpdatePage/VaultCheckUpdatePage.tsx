@@ -1,14 +1,15 @@
+import { ProductLogo } from '@core/ui/product/ProductLogo'
+import { useVersion } from '@core/ui/product/state/version'
+import { useOpenUrl } from '@core/ui/state/openUrl'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageSlice } from '@lib/ui/page/PageSlice'
 import { Text } from '@lib/ui/text'
 import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
 import { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime'
 import useVersionCheck from '../../../lib/hooks/useVersionCheck'
-import { ProductLogo } from '../../../ui/logo/ProductLogo'
-import { PageHeader } from '../../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
-import { PageSlice } from '../../../ui/page/PageSlice'
 import { DOWNLOAD_VULTISIG_LINK } from '../constants'
 import {
   CenteredText,
@@ -19,20 +20,16 @@ import {
 
 const VaultCheckUpdatePage = () => {
   const { t } = useTranslation()
-  const {
-    localVersion,
-    latestVersion,
-    updateAvailable,
-    isLocalVersionValid,
-    remoteError,
-    isLoading,
-  } = useVersionCheck()
+  const { latestVersion, updateAvailable, remoteError, isLoading } =
+    useVersionCheck()
+
+  const localVersion = useVersion()
+
+  const openUrl = useOpenUrl()
 
   let content: ReactNode
 
-  if (!isLocalVersionValid) {
-    content = t('vaultCheckUpdatePage.errorLoadingLocalVersion')
-  } else if (remoteError) {
+  if (remoteError) {
     content = t('vaultCheckUpdatePage.errorFetchingLatestVersion', {
       error: extractErrorMsg(remoteError),
     })
@@ -44,7 +41,7 @@ const VaultCheckUpdatePage = () => {
     content = (
       <CenteredText>
         {t('vaultCheckUpdatePage.newVersionAvailable', { latestVersion })}
-        <DownloadButton onClick={() => BrowserOpenURL(DOWNLOAD_VULTISIG_LINK)}>
+        <DownloadButton onClick={() => openUrl(DOWNLOAD_VULTISIG_LINK)}>
           {t('vaultCheckUpdatePage.downloadButton')}
         </DownloadButton>
       </CenteredText>

@@ -1,56 +1,50 @@
+import { getChainKind } from '@core/chain/ChainKind'
 import { extractAccountCoinKey } from '@core/chain/coin/AccountCoin'
 import { chainTokens } from '@core/chain/coin/chainTokens'
+import { coinFinderChainKinds } from '@core/chain/coin/find/CoinFinderChainKind'
 import { getCoinValue } from '@core/chain/coin/utils/getCoinValue'
 import { isFeeCoin } from '@core/chain/coin/utils/isFeeCoin'
 import { sortCoinsByBalance } from '@core/chain/coin/utils/sortCoinsByBalance'
-import { useAssertWalletCore } from '@core/ui/chain/providers/WalletCoreProvider'
+import { ChainEntityIcon } from '@core/ui/chain/coin/icon/ChainEntityIcon'
+import { getChainEntityIconSrc } from '@core/ui/chain/coin/icon/utils/getChainEntityIconSrc'
+import { useFiatCurrency } from '@core/ui/state/fiatCurrency'
+import {
+  useCurrentVaultAddress,
+  useCurrentVaultNativeCoin,
+} from '@core/ui/vault/state/currentVaultCoins'
 import { IconButton } from '@lib/ui/buttons/IconButton'
 import { CopyIcon } from '@lib/ui/icons/CopyIcon'
 import { RefreshIcon } from '@lib/ui/icons/RefreshIcon'
 import { HStack, VStack } from '@lib/ui/layout/Stack'
+import { Spinner } from '@lib/ui/loaders/Spinner'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderIconButton } from '@lib/ui/page/PageHeaderIconButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
+import { Panel } from '@lib/ui/panel/Panel'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
-import { useInvalidateQueries } from '@lib/ui/query/hooks/useInvalidateQueries'
+import { useInvalidateQueriesMutation } from '@lib/ui/query/hooks/useInvalidateQueriesMutation'
 import { Text } from '@lib/ui/text'
+import { isOneOf } from '@lib/utils/array/isOneOf'
 import { splitBy } from '@lib/utils/array/splitBy'
 import { sum } from '@lib/utils/array/sum'
 import { withoutDuplicates } from '@lib/utils/array/withoutDuplicates'
 import { formatAmount } from '@lib/utils/formatAmount'
-import { useMutation } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { QueryKey } from '@tanstack/react-query'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { AddressPageShyPrompt } from '../../chain/components/address/AddressPageShyPrompt'
-import { ChainEntityIcon } from '../../chain/ui/ChainEntityIcon'
 import { useCopyAddress } from '../../chain/ui/hooks/useCopyAddress'
-import { deriveAddress } from '../../chain/utils/deriveAddress'
-import { getChainEntityIconSrc } from '../../chain/utils/getChainEntityIconSrc'
-import { toHexPublicKey } from '../../chain/utils/toHexPublicKey'
 import { getBalanceQueryKey } from '../../coin/query/useBalancesQuery'
-import { useSaveCoinsMutation } from '../../coin/query/useSaveCoinsMutation'
-import {
-  getTokensAutoDiscoveryQueryKey,
-  useTokensAutoDiscoveryQuery,
-} from '../../coin/query/useTokensAutoDiscoveryQuery'
-import { Spinner } from '../../lib/ui/loaders/Spinner'
-import { Panel } from '../../lib/ui/panel/Panel'
 import { makeAppPath } from '../../navigation'
-import { useFiatCurrency } from '../../preferences/state/fiatCurrency'
-import { toStorageCoin } from '../../storage/storageCoin'
-import { PageContent } from '../../ui/page/PageContent'
-import { PageHeader } from '../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../ui/page/PageHeaderBackButton'
-import { PageHeaderIconButton } from '../../ui/page/PageHeaderIconButton'
 import { PageHeaderIconButtons } from '../../ui/page/PageHeaderIconButtons'
-import { PageHeaderTitle } from '../../ui/page/PageHeaderTitle'
 import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware'
 import { VaultPrimaryActions } from '../components/VaultPrimaryActions'
-import { useVaultPublicKeyQuery } from '../publicKey/queries/useVaultPublicKeyQuery'
 import { useVaultChainCoinsQuery } from '../queries/useVaultChainCoinsQuery'
-import {
-  useCurrentVaultAddress,
-  useCurrentVaultNativeCoin,
-} from '../state/currentVault'
+import { getCoinFinderQueryKey } from './coin/finder/queries/useCoinFinderQuery'
 import { ManageVaultChainCoinsPrompt } from './manage/coin/ManageVaultChainCoinsPrompt'
 import { useCurrentVaultChain } from './useCurrentVaultChain'
 import { VaultAddressLink } from './VaultAddressLink'
@@ -58,72 +52,29 @@ import { VaultChainCoinItem } from './VaultChainCoinItem'
 
 export const VaultChainPage = () => {
   const chain = useCurrentVaultChain()
-  const invalidateQueries = useInvalidateQueries()
-  const [fiatCurrency] = useFiatCurrency()
-  const publicKeyQuery = useVaultPublicKeyQuery(chain)
+  const fiatCurrency = useFiatCurrency()
   const vaultCoinsQuery = useVaultChainCoinsQuery(chain)
   const nativeCoin = useCurrentVaultNativeCoin(chain)
   const copyAddress = useCopyAddress()
-  const invalidateQueryKey = getBalanceQueryKey(
-    extractAccountCoinKey(nativeCoin)
-  )
-  const walletCore = useAssertWalletCore()
+
   const { t } = useTranslation()
-  const { mutate: saveCoins } = useSaveCoinsMutation()
   const address = useCurrentVaultAddress(chain)
 
-  const account = useMemo(
-    () => ({
-      address: nativeCoin.address,
-      chain,
-    }),
-    [nativeCoin.address, chain]
-  )
+  const { mutate: invalidateQueries, isPending } =
+    useInvalidateQueriesMutation()
 
-  const findTokensQuery = useTokensAutoDiscoveryQuery(account)
-  const { mutate: refreshBalance, isPending } = useMutation({
-    mutationFn: () => {
-      return invalidateQueries(
-        invalidateQueryKey,
-        getTokensAutoDiscoveryQueryKey(account)
-      )
-    },
-  })
+  const refresh = useCallback(() => {
+    const keys: QueryKey[] = [
+      getBalanceQueryKey(extractAccountCoinKey(nativeCoin)),
+    ]
 
-  useEffect(() => {
-    // Ensure findTokensQuery.data is an array
-    const tokens = Array.isArray(findTokensQuery.data)
-      ? findTokensQuery.data
-      : []
-
-    const isValidPublicKey =
-      publicKeyQuery.data &&
-      typeof publicKeyQuery.data.data === 'function' &&
-      publicKeyQuery.data.data().length > 0 // Ensure it contains meaningful data
-
-    if (tokens.length > 0 && publicKeyQuery.isSuccess && isValidPublicKey) {
-      const publicKey = publicKeyQuery.data
-      const address = deriveAddress({ chain, publicKey, walletCore })
-      const hexPublicKey = toHexPublicKey({ publicKey, walletCore })
-
-      saveCoins(
-        tokens.map(coin =>
-          toStorageCoin({
-            ...coin,
-            address,
-            hexPublicKey,
-          })
-        )
-      )
+    const chainKind = getChainKind(chain)
+    if (isOneOf(chainKind, coinFinderChainKinds)) {
+      keys.push(getCoinFinderQueryKey({ address, chain }))
     }
-  }, [
-    chain,
-    findTokensQuery.data,
-    publicKeyQuery.data,
-    publicKeyQuery.isSuccess,
-    saveCoins,
-    walletCore,
-  ])
+
+    invalidateQueries(keys)
+  }, [address, chain, invalidateQueries, nativeCoin])
 
   const hasMultipleCoinsSupport = chain in chainTokens
 
@@ -134,9 +85,7 @@ export const VaultChainPage = () => {
         secondaryControls={
           <PageHeaderIconButtons>
             <PageHeaderIconButton
-              onClick={() => {
-                refreshBalance()
-              }}
+              onClick={refresh}
               icon={isPending ? <Spinner /> : <RefreshIcon />}
             />
           </PageHeaderIconButtons>

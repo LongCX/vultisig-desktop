@@ -1,5 +1,20 @@
 import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
+import { useCoinPriceQuery } from '@core/ui/chain/coin/price/queries/useCoinPriceQuery'
+import { TxOverviewMemo } from '@core/ui/chain/tx/TxOverviewMemo'
+import { TxOverviewPanel } from '@core/ui/chain/tx/TxOverviewPanel'
+import {
+  TxOverviewChainDataRow,
+  TxOverviewPrimaryRowTitle,
+  TxOverviewRow,
+} from '@core/ui/chain/tx/TxOverviewRow'
+import { useCurrentVaultCoin } from '@core/ui/vault/state/currentVaultCoins'
+import { WithProgressIndicator } from '@lib/ui/flow/WithProgressIndicator'
 import { VStack } from '@lib/ui/layout/Stack'
+import { Spinner } from '@lib/ui/loaders/Spinner'
+import { PageContent } from '@lib/ui/page/PageContent'
+import { PageHeader } from '@lib/ui/page/PageHeader'
+import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
+import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 import { OnBackProp } from '@lib/ui/props'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 import { Text } from '@lib/ui/text'
@@ -7,22 +22,7 @@ import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { TxOverviewMemo } from '../../../chain/tx/components/TxOverviewMemo'
-import { TxOverviewPanel } from '../../../chain/tx/components/TxOverviewPanel'
-import {
-  TxOverviewChainDataRow,
-  TxOverviewPrimaryRowTitle,
-  TxOverviewRow,
-} from '../../../chain/tx/components/TxOverviewRow'
 import { useFormatFiatAmount } from '../../../chain/ui/hooks/useFormatFiatAmount'
-import { useCoinPriceQuery } from '../../../coin/query/useCoinPriceQuery'
-import { Spinner } from '../../../lib/ui/loaders/Spinner'
-import { PageContent } from '../../../ui/page/PageContent'
-import { PageHeader } from '../../../ui/page/PageHeader'
-import { PageHeaderBackButton } from '../../../ui/page/PageHeaderBackButton'
-import { PageHeaderTitle } from '../../../ui/page/PageHeaderTitle'
-import { WithProgressIndicator } from '../../keysign/shared/WithProgressIndicator'
-import { useCurrentVaultCoin } from '../../state/currentVault'
 import { SendFiatFee } from '../fee/SendFiatFeeWrapper'
 import { SendGasFeeWrapper } from '../fee/SendGasFeeWrapper'
 import { useSendCappedAmountQuery } from '../queries/useSendCappedAmountQuery'
