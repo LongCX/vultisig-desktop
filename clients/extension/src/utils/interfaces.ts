@@ -4,7 +4,7 @@ import { Chain } from '@core/chain/Chain'
 import { ParsedMemoParams } from '@core/chain/chains/evm/tx/getParsedMemo'
 import { KeysignSignature } from '@core/mpc/keysign/KeysignSignature'
 import { IMsgTransfer } from '@core/mpc/keysign/preSignedInputData/ibc/IMsgTransfer'
-import { Vault as VaultCore } from '@core/ui/vault/Vault'
+import { Vault } from '@core/ui/vault/Vault'
 import { WalletCore } from '@trustwallet/wallet-core'
 import { TransactionResponse } from 'ethers'
 
@@ -21,12 +21,12 @@ export namespace Messaging {
 
   export namespace GetVault {
     export type Request = any
-    export type Response = Vault | undefined
+    export type Response = VaultExport | undefined
   }
 
   export namespace GetVaults {
     export type Request = any
-    export type Response = Vault[]
+    export type Response = VaultExport[]
   }
 
   export namespace SetPriority {
@@ -35,19 +35,17 @@ export namespace Messaging {
   }
 }
 
+export type VaultExport = {
+  uid: string
+  name: string
+  publicKeyEcdsa: string
+  publicKeyEddsa: string
+  hexChainCode: string
+}
+
 export interface AccountsProps {
   chain: Chain
   sender: string
-}
-
-export interface ChainProps {
-  active?: boolean
-  address?: string
-  decimals: number
-  derivationKey?: string
-  id: string
-  chain: Chain
-  ticker: string
 }
 
 export interface SendTransactionResponse {
@@ -154,7 +152,7 @@ export interface TransactionDetails {
 
 export interface ITransaction {
   transactionDetails: TransactionDetails
-  chain: ChainProps
+  chain: Chain
   contract?: string
   customMessage?: CustomMessage
   customSignature?: string
@@ -174,16 +172,6 @@ export interface ITransaction {
   txHash?: string
   windowId?: number
   raw?: any
-}
-
-export type Vault = VaultCore & {
-  // Keep legacy fields temporarily (to be removed later)
-  //TODO: active chain removed, other properties will be extracted in separate PRs
-  transactions: ITransaction[]
-  apps?: string[]
-  selected?: boolean
-  chains: ChainProps[]
-  uid: string
 }
 
 export interface SignedTransaction {

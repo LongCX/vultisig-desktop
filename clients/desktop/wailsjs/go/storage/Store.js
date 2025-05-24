@@ -22,16 +22,16 @@ export function DeleteVaultFolder(arg1) {
   return window['go']['storage']['Store']['DeleteVaultFolder'](arg1);
 }
 
-export function GetAddressBookItems(arg1) {
-  return window['go']['storage']['Store']['GetAddressBookItems'](arg1);
+export function GetAddressBookItem(arg1) {
+  return window['go']['storage']['Store']['GetAddressBookItem'](arg1);
 }
 
 export function GetAllAddressBookItems() {
   return window['go']['storage']['Store']['GetAllAddressBookItems']();
 }
 
-export function GetCoins(arg1) {
-  return window['go']['storage']['Store']['GetCoins'](arg1);
+export function GetCoins() {
+  return window['go']['storage']['Store']['GetCoins']();
 }
 
 export function GetVault(arg1) {
@@ -76,16 +76,4 @@ export function SaveVaultFolder(arg1) {
 
 export function UpdateAddressBookItem(arg1) {
   return window['go']['storage']['Store']['UpdateAddressBookItem'](arg1);
-}
-
-export function UpdateVaultFolder(arg1) {
-  return window['go']['storage']['Store']['UpdateVaultFolder'](arg1);
-}
-
-export function UpdateVaultFolderName(arg1, arg2) {
-  return window['go']['storage']['Store']['UpdateVaultFolderName'](arg1, arg2);
-}
-
-export function UpdateVaultFolderOrder(arg1, arg2) {
-  return window['go']['storage']['Store']['UpdateVaultFolderOrder'](arg1, arg2);
 }

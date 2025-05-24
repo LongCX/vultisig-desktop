@@ -1,6 +1,5 @@
 import { ProductLogo } from '@core/ui/product/ProductLogo'
-import { useVersion } from '@core/ui/product/state/version'
-import { useOpenUrl } from '@core/ui/state/openUrl'
+import { useCore } from '@core/ui/state/core'
 import { PageHeader } from '@lib/ui/page/PageHeader'
 import { PageHeaderBackButton } from '@lib/ui/page/PageHeaderBackButton'
 import { PageSlice } from '@lib/ui/page/PageSlice'
@@ -10,7 +9,6 @@ import { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import useVersionCheck from '../../../lib/hooks/useVersionCheck'
-import { DOWNLOAD_VULTISIG_LINK } from '../constants'
 import {
   CenteredText,
   Content,
@@ -23,9 +21,7 @@ const VaultCheckUpdatePage = () => {
   const { latestVersion, updateAvailable, remoteError, isLoading } =
     useVersionCheck()
 
-  const localVersion = useVersion()
-
-  const openUrl = useOpenUrl()
+  const { openUrl, version } = useCore()
 
   let content: ReactNode
 
@@ -41,7 +37,9 @@ const VaultCheckUpdatePage = () => {
     content = (
       <CenteredText>
         {t('vaultCheckUpdatePage.newVersionAvailable', { latestVersion })}
-        <DownloadButton onClick={() => openUrl(DOWNLOAD_VULTISIG_LINK)}>
+        <DownloadButton
+          onClick={() => openUrl('https://vultisig.com/download/vultisig')}
+        >
           {t('vaultCheckUpdatePage.downloadButton')}
         </DownloadButton>
       </CenteredText>
@@ -63,7 +61,7 @@ const VaultCheckUpdatePage = () => {
           </Text>
           {!updateAvailable && (
             <Text color="contrast" size={14}>
-              {localVersion}
+              {version}
             </Text>
           )}
         </Content>

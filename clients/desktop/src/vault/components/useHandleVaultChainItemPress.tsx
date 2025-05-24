@@ -1,8 +1,7 @@
 import { Chain } from '@core/chain/Chain'
+import { useCopyAddress } from '@core/ui/chain/hooks/useCopyAddress'
+import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
 import { useEffect, useState } from 'react'
-
-import { useCopyAddress } from '../../chain/ui/hooks/useCopyAddress'
-import { useAppNavigate } from '../../navigation/hooks/useAppNavigate'
 
 type Input = {
   chain: string
@@ -14,7 +13,7 @@ export const useHandleVaultChainItemPress = ({ chain, address }: Input) => {
   const [copiedAt, setCopiedAt] = useState<number | null>(null)
   const copyAddress = useCopyAddress()
 
-  const navigate = useAppNavigate()
+  const navigate = useCoreNavigate()
 
   useEffect(() => {
     if (!pressedAt || !address || copiedAt) {
@@ -40,7 +39,7 @@ export const useHandleVaultChainItemPress = ({ chain, address }: Input) => {
     },
     onPointerUp: () => {
       if (!copiedAt) {
-        navigate('vaultChainDetail', { params: { chain: chain as Chain } })
+        navigate({ id: 'vaultChainDetail', state: { chain: chain as Chain } })
       }
 
       setPressedAt(null)

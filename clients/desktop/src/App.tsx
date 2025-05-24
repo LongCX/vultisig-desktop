@@ -1,22 +1,18 @@
-import { GlobalStyle } from '@lib/ui/css/GlobalStyle'
 import { VStack } from '@lib/ui/layout/Stack'
-import { ToastProvider } from '@lib/ui/toast/ToastProvider'
-import { RouterProvider } from 'react-router-dom'
+import { ActiveView } from '@lib/ui/navigation/ActiveView'
 
 import { AppProviders } from './AppProviders'
-import { router } from './navigation/router'
-import OnboardingResetter from './onboarding/OnboardingRessetterProvider'
+import { LauncherObserver } from './launcher/components/LauncherObserver'
+import { views } from './navigation/views'
+import { OnboardingResetter } from './onboarding/OnboardingResetter'
 
 const App = () => {
   return (
     <AppProviders>
-      <GlobalStyle />
       <VStack fullSize>
-        <OnboardingResetter>
-          <ToastProvider>
-            <RouterProvider router={router} />
-          </ToastProvider>
-        </OnboardingResetter>
+        <LauncherObserver />
+        <ActiveView views={views} />
+        <OnboardingResetter />
       </VStack>
     </AppProviders>
   )

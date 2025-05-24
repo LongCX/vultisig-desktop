@@ -1,9 +1,11 @@
 import { fromChainAmount } from '@core/chain/amount/fromChainAmount'
 import { getCoinValue } from '@core/chain/coin/utils/getCoinValue'
 import { ChainEntityIcon } from '@core/ui/chain/coin/icon/ChainEntityIcon'
-import { getChainEntityIconSrc } from '@core/ui/chain/coin/icon/utils/getChainEntityIconSrc'
-import { useFiatCurrency } from '@core/ui/state/fiatCurrency'
-import { useCurrentVaultAddreses } from '@core/ui/vault/state/currentVaultCoins'
+import { getChainLogoSrc } from '@core/ui/chain/metadata/getChainLogoSrc'
+import { useFiatCurrency } from '@core/ui/storage/fiatCurrency'
+import { BalanceVisibilityAware } from '@core/ui/vault/balance/visibility/BalanceVisibilityAware'
+import { VaultChainBalance } from '@core/ui/vault/queries/useVaultChainsBalancesQuery'
+import { useCurrentVaultAddresses } from '@core/ui/vault/state/currentVaultCoins'
 import { centerContent } from '@lib/ui/css/centerContent'
 import { horizontalPadding } from '@lib/ui/css/horizontalPadding'
 import { round } from '@lib/ui/css/round'
@@ -16,8 +18,6 @@ import { formatAmount } from '@lib/utils/formatAmount'
 import { formatTokenAmount } from '@lib/utils/formatTokenAmount'
 import styled from 'styled-components'
 
-import { BalanceVisibilityAware } from '../balance/visibility/BalanceVisibilityAware'
-import { VaultChainBalance } from '../queries/useVaultChainsBalancesQuery'
 import { useHandleVaultChainItemPress } from './useHandleVaultChainItemPress'
 
 const Pill = styled.div`
@@ -37,7 +37,7 @@ export const VaultChainItem = ({ balance }: VaultChainItemProps) => {
   const { chain, coins } = balance
   const fiatCurrency = useFiatCurrency()
 
-  const addresses = useCurrentVaultAddreses()
+  const addresses = useCurrentVaultAddresses()
   const address = addresses[chain]
 
   const pressHandlers = useHandleVaultChainItemPress({
@@ -61,7 +61,7 @@ export const VaultChainItem = ({ balance }: VaultChainItemProps) => {
     <StyledPanel data-testid="VaultChainItem-Panel" {...pressHandlers}>
       <HStack fullWidth alignItems="center" gap={16}>
         <ChainEntityIcon
-          value={getChainEntityIconSrc(chain)}
+          value={getChainLogoSrc(chain)}
           style={{ fontSize: 32 }}
         />
 

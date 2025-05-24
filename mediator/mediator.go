@@ -3,6 +3,7 @@ package mediator
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,7 +46,15 @@ func (r *Server) AdvertiseMediator(name string) error {
 	if err != nil {
 		return fmt.Errorf("could not determine host: %v", err)
 	}
-	hostName = fmt.Sprintf("%s.local.", hostName)
+	
+	const localSuffix = ".local"
+	
+	// Remove .local if it already exists to avoid duplicate
+	if strings.HasSuffix(hostName, localSuffix) {
+		hostName = strings.TrimSuffix(hostName, localSuffix)
+	}
+	
+	hostName = fmt.Sprintf("%s%s.", hostName, localSuffix)
 	mdns, err := m.NewMDNSService(name, "_http._tcp", "", hostName, MediatorPort, nil, []string{
 		name,
 	})
@@ -59,6 +68,7 @@ func (r *Server) AdvertiseMediator(name string) error {
 		return fmt.Errorf("fail to start mdns server,err:%w", err)
 	}
 	r.mdns = s
+	fmt.Printf("Successfully advertising mediator '%s' on %s:%d\n", name, hostName, MediatorPort)
 	return nil
 }
 
@@ -70,23 +80,27 @@ func (r *Server) StopAdvertiseMediator() error {
 	}
 	return nil
 }
+
 func (r *Server) DiscoveryService(name string) (string, error) {
 	entriesCh := make(chan *m.ServiceEntry, 4)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	var err error
 	var serviceHost string
+
 	go func() {
 		defer wg.Done()
 		for {
 			select {
-			case <-time.After(2 * time.Second):
+			case <-time.After(5 * time.Second): 
 				err = fmt.Errorf("fail to find service, timeout")
 				return
 			case entry := <-entriesCh:
-				if entry.Info == name {
-					serviceHost = fmt.Sprintf("%s:%d", entry.AddrV4, entry.Port)
-					return
+				for _, txt := range entry.InfoFields {
+					if txt == name {
+						serviceHost = fmt.Sprintf("%s:%d", entry.AddrV4, entry.Port)
+						return
+					}
 				}
 			}
 		}
@@ -94,13 +108,13 @@ func (r *Server) DiscoveryService(name string) (string, error) {
 
 	param := &m.QueryParam{
 		Service:     "_http._tcp",
-		Timeout:     2 * time.Second,
+		Timeout:     5 * time.Second, 
 		Entries:     entriesCh,
 		DisableIPv6: true,
 	}
 
 	if err := m.Query(param); err != nil {
-		return "", fmt.Errorf("fail to query service,err:%w", err)
+		return "", fmt.Errorf("fail to query service, err: %w", err)
 	}
 	wg.Wait()
 	return serviceHost, err

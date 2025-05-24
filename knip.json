@@ -1,5 +1,10 @@
 {
-  "ignore": ["core/mpc/types/**", "clients/desktop/wailsjs/**"],
+  "ignore": [
+    "core/mpc/types/**",
+    "clients/desktop/wailsjs/**",
+    "clients/extension/src/state/persistent/usePersistentStateMutation.ts",
+    "clients/extension/src/state/persistent/usePersistentStateQuery.ts"
+  ],
   "ignoreBinaries": ["tsx", "wails"],
   "entry": [
     "clients/extension/src/background/index.ts",
@@ -7,12 +12,7 @@
     "clients/extension/src/inpage/index.ts",
     "clients/extension/src/messengers/bridge.ts",
     "clients/extension/src/messengers/createMessenger.ts",
-    "clients/extension/src/pages/popup/index.tsx",
-    "clients/extension/src/pages/connect/index.tsx",
-    "clients/extension/src/pages/import/index.tsx",
-    "clients/extension/src/pages/transaction/index.tsx",
-    "clients/extension/src/pages/vaults/index.tsx",
-    "clients/extension/src/relay/index.ts"
+    "clients/extension/src/pages/index.tsx"
   ],
   "ignoreDependencies": [
     "@types/chrome",

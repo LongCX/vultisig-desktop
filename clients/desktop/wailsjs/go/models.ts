@@ -1,11 +1,10 @@
 export namespace storage {
 	
 	export class AddressBookItem {
-	    ID: number[];
-	    Title: string;
-	    Address: string;
-	    Chain: string;
-	    Order: number;
+	    id: string;
+	    title: string;
+	    address: string;
+	    chain: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AddressBookItem(source);
@@ -13,18 +12,16 @@ export namespace storage {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.Title = source["Title"];
-	        this.Address = source["Address"];
-	        this.Chain = source["Chain"];
-	        this.Order = source["Order"];
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.address = source["address"];
+	        this.chain = source["chain"];
 	    }
 	}
 	export class Coin {
 	    id: string;
 	    chain: string;
 	    address: string;
-	    hex_public_key: string;
 	    ticker: string;
 	    contract_address: string;
 	    is_native_token: boolean;
@@ -41,7 +38,6 @@ export namespace storage {
 	        this.id = source["id"];
 	        this.chain = source["chain"];
 	        this.address = source["address"];
-	        this.hex_public_key = source["hex_public_key"];
 	        this.ticker = source["ticker"];
 	        this.contract_address = source["contract_address"];
 	        this.is_native_token = source["is_native_token"];

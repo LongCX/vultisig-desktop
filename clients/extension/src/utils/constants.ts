@@ -1,5 +1,4 @@
 import { Chain } from '@core/chain/Chain'
-import keyMirror from 'keymirror'
 
 export enum CosmosMsgType {
   MSG_SEND = 'cosmos-sdk/MsgSend',
@@ -19,11 +18,6 @@ export enum MessageKey {
   PRIORITY = 'priority',
   VAULT = 'vault',
   VAULTS = 'vaults',
-}
-
-export enum SenderKey {
-  PAGE = 'page',
-  RELAY = 'relay',
 }
 
 export enum Currency {
@@ -132,20 +126,6 @@ export namespace RequestMethod {
     WALLET_SWITCH_CHAIN = 'wallet_switch_chain',
   }
 }
-
-export const errorKey = keyMirror({
-  FAIL_TO_GET_ACCOUNTS: true,
-  FAIL_TO_GET_ADDRESS: true,
-  FAIL_TO_GET_VAULT: true,
-  FAIL_TO_GET_VAULTS: true,
-  FAIL_TO_GET_TRANSACTION: true,
-  FAIL_TO_INIT_WASM: true,
-  INVALID_CHAIN: true,
-  INVALID_EXTENSION: true,
-  INVALID_FILE: true,
-  INVALID_QRCODE: true,
-  INVALID_VAULT: true,
-})
 
 const supportedChains: Record<Chain, boolean> = {
   [Chain.Arbitrum]: true,

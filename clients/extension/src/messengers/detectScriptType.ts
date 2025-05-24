@@ -9,14 +9,12 @@ export function detectScriptType() {
     if (window.location.pathname.includes('background')) return 'background'
     if (window.location.pathname.includes('contentscript'))
       return 'contentScript'
-    if (
-      window.location.pathname.includes('popup') &&
-      !window.location.origin.includes('trezor')
-    )
-      return 'popup'
+    if (window.location.pathname.includes('index')) return 'popup'
     return 'contentScript'
   }
   if (hasChromeRuntime && !hasWindow) return 'background'
   if (!hasChromeRuntime && hasWindow) return 'inpage'
   throw new Error('Undetected script.')
 }
+
+export type ScriptType = ReturnType<typeof detectScriptType>

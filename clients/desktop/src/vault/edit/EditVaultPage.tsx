@@ -1,4 +1,3 @@
-import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
 import { useCurrentVault } from '@core/ui/vault/state/currentVault'
 import { UnstyledButton } from '@lib/ui/buttons/UnstyledButton'
 import BackupIcon from '@lib/ui/icons/BackupIcon'
@@ -36,8 +35,7 @@ type SettingItem = {
 
 const EditVaultPage = () => {
   const { t } = useTranslation()
-  const navigate = useCoreNavigate()
-  const appNavigate = useAppNavigate()
+  const navigate = useAppNavigate()
   const currentVault = useCurrentVault()
 
   if (!currentVault) {
@@ -50,37 +48,37 @@ const EditVaultPage = () => {
       title: t('details'),
       subtitle: t('vault_setting_edit_vault_details_subtitle'),
       icon: <QuestionMarkIcon />,
-      onClick: () => appNavigate('vaultDetails'),
+      onClick: () => navigate({ id: 'vaultDetails' }),
     },
     {
       title: t('backup'),
       subtitle: t('vault_setting_edit_vault_backup_subtitle'),
       icon: <BackupIcon />,
-      onClick: () => appNavigate('vaultBackup'),
+      onClick: () => navigate({ id: 'vaultBackup' }),
     },
     {
       title: t('vault_setting_edit_vault_rename_title'),
       subtitle: t('vault_setting_edit_vault_rename_subtitle'),
       icon: <SquarePenIcon />,
-      onClick: () => appNavigate('vaultRename'),
+      onClick: () => navigate({ id: 'renameVault' }),
     },
     {
       title: t('reshare'),
       subtitle: t('vault_setting_edit_vault_reshare_subtitle'),
       icon: <ReshareIcon />,
-      onClick: () => navigate('reshareVault'),
+      onClick: () => navigate({ id: 'reshareVault' }),
     },
     {
       title: t('sign'),
       subtitle: t('sign_custom_message'),
       icon: <SignatureIcon />,
-      onClick: () => appNavigate('signCustomMessage'),
+      onClick: () => navigate({ id: 'signCustomMessage' }),
     },
     {
       title: t('delete'),
       subtitle: t('vault_setting_edit_vault_delete_subtitle'),
       icon: <TrashIcon />,
-      onClick: () => appNavigate('vaultDelete'),
+      onClick: () => navigate({ id: 'deleteVault' }),
       textColor: 'danger',
     },
   ]

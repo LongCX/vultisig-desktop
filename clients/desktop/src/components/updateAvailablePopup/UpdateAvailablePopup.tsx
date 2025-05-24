@@ -1,5 +1,5 @@
 import { ProductLogo } from '@core/ui/product/ProductLogo'
-import { useVersion } from '@core/ui/product/state/version'
+import { useCore } from '@core/ui/state/core'
 import { Text } from '@lib/ui/text'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,7 +15,7 @@ import {
 const UpdateAvailablePopup = () => {
   const { t } = useTranslation()
   const navigate = useAppNavigate()
-  const localVersion = useVersion()
+  const { version } = useCore()
 
   const { latestVersion, updateAvailable, remoteError, isLoading } =
     useVersionCheck()
@@ -38,10 +38,10 @@ const UpdateAvailablePopup = () => {
       <Text size={14} color="contrast" weight={500}>
         {t('updatePopup.updateAvailableMessage', {
           latestVersion,
-          localVersion,
+          version,
         })}
       </Text>
-      <StyledButton onClickCapture={() => navigate('checkUpdate')}>
+      <StyledButton onClickCapture={() => navigate({ id: 'checkUpdate' })}>
         {t('updatePopup.updateButton')}
       </StyledButton>
     </FixedWrapper>

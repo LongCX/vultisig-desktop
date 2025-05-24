@@ -1,3 +1,5 @@
+import { pick } from '@lib/utils/record/pick'
+
 import { Chain } from '../Chain'
 import { ChainEntity } from '../ChainEntity'
 import { chainFeeCoin } from './chainFeeCoin'
@@ -11,7 +13,7 @@ export type Coin = CoinKey & {
   priceProviderId?: string
   decimals: number
   ticker: string
-  logo: string
+  logo?: string
 }
 
 export type CoinAmount = {
@@ -25,11 +27,6 @@ export const areEqualCoins = (one: CoinKey, another: CoinKey): boolean =>
 
 export const coinKeyToString = (coin: CoinKey): string =>
   `${coin.chain}:${coin.id}`
-
-export const coinKeyFromString = (coin: string): CoinKey => {
-  const [chain, id] = coin.split(':')
-  return { chain: chain as Chain, id }
-}
 
 export const getCoinFromCoinKey = (coinKey: CoinKey): Coin | undefined => {
   const tokens = chainTokens[coinKey.chain]
@@ -45,3 +42,6 @@ export const getCoinFromCoinKey = (coinKey: CoinKey): Coin | undefined => {
 
   return undefined
 }
+
+export const extractCoinKey = <T extends CoinKey>(coin: T): CoinKey =>
+  pick(coin, ['chain', 'id'])

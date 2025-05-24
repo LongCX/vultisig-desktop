@@ -1,5 +1,4 @@
 import { KeysignMessagePayload } from '@core/mpc/keysign/keysignPayload/KeysignMessagePayload'
-import { CurrentTxHashProvider } from '@core/ui/chain/state/currentTxHash'
 import { TxOverviewPanel } from '@core/ui/chain/tx/TxOverviewPanel'
 import { TxOverviewChainDataRow } from '@core/ui/chain/tx/TxOverviewRow'
 import { FullPageFlowErrorState } from '@core/ui/flow/FullPageFlowErrorState'
@@ -9,7 +8,6 @@ import { KeysignSigningState } from '@core/ui/mpc/keysign/flow/KeysignSigningSta
 import { KeysignTxOverview } from '@core/ui/mpc/keysign/tx/KeysignTxOverview'
 import { SwapKeysignTxOverview } from '@core/ui/mpc/keysign/tx/swap/SwapKeysignTxOverview'
 import { useCoreNavigate } from '@core/ui/navigation/hooks/useCoreNavigate'
-import { useVersion } from '@core/ui/product/state/version'
 import { Match } from '@lib/ui/base/Match'
 import { MatchRecordUnion } from '@lib/ui/base/MatchRecordUnion'
 import { Button } from '@lib/ui/buttons/Button'
@@ -21,9 +19,13 @@ import { PageHeaderTitle } from '@lib/ui/page/PageHeaderTitle'
 import { OnBackProp } from '@lib/ui/props'
 import { MatchQuery } from '@lib/ui/query/components/MatchQuery'
 import { Text } from '@lib/ui/text'
+import { getLastItem } from '@lib/utils/array/getLastItem'
 import { extractErrorMsg } from '@lib/utils/error/extractErrorMsg'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import { useCore } from '../../state/core'
+import { normalizeTxHash } from './utils/normalizeTxHash'
 
 type KeysignSigningStepProps = {
   payload: KeysignMessagePayload
@@ -34,7 +36,7 @@ export const KeysignSigningStep = ({
   payload,
 }: KeysignSigningStepProps) => {
   const { t } = useTranslation()
-  const localVersion = useVersion()
+  const { version } = useCore()
 
   const { mutate: startKeysign, ...mutationStatus } =
     useKeysignMutation(payload)
@@ -46,47 +48,59 @@ export const KeysignSigningStep = ({
   return (
     <MatchQuery
       value={mutationStatus}
-      success={value => (
-        <>
-          <PageHeader
-            title={<PageHeaderTitle>{t('overview')}</PageHeaderTitle>}
-          />
-          <PageContent>
-            <MatchRecordUnion
-              value={payload}
-              handlers={{
-                keysign: payload => (
-                  <CurrentTxHashProvider value={value}>
+      success={txHashes => {
+        const txHash = getLastItem(txHashes)
+
+        return (
+          <>
+            <PageHeader
+              title={<PageHeaderTitle>{t('overview')}</PageHeaderTitle>}
+            />
+            <PageContent>
+              <MatchRecordUnion
+                value={payload}
+                handlers={{
+                  keysign: payload => (
                     <Match
                       value={payload.swapPayload.value ? 'swap' : 'default'}
-                      swap={() => <SwapKeysignTxOverview value={payload} />}
+                      swap={() => (
+                        <SwapKeysignTxOverview
+                          txHashes={txHashes}
+                          value={payload}
+                        />
+                      )}
                       default={() => (
                         <>
                           <TxOverviewPanel>
-                            <KeysignTxOverview value={payload} />
+                            <KeysignTxOverview
+                              txHash={normalizeTxHash(txHash, {
+                                memo: payload?.memo,
+                              })}
+                              value={payload}
+                            />
                           </TxOverviewPanel>
-                          <Button onClick={() => navigate('vault')} as="div">
+                          <Button onClick={() => navigate({ id: 'vault' })}>
                             {t('complete')}
                           </Button>
                         </>
                       )}
                     />
-                  </CurrentTxHashProvider>
-                ),
-                custom: payload => (
-                  <TxOverviewPanel>
-                    <KeysignCustomMessageInfo value={payload} />
-                    <TxOverviewChainDataRow>
-                      <span>{t('signature')}</span>
-                      <span>{value}</span>
-                    </TxOverviewChainDataRow>
-                  </TxOverviewPanel>
-                ),
-              }}
-            />
-          </PageContent>
-        </>
-      )}
+                  ),
+                  custom: payload => (
+                    <TxOverviewPanel>
+                      <KeysignCustomMessageInfo value={payload} />
+                      <TxOverviewChainDataRow>
+                        <span>{t('signature')}</span>
+                        <span>{txHash}</span>
+                      </TxOverviewChainDataRow>
+                    </TxOverviewPanel>
+                  ),
+                }}
+              />
+            </PageContent>
+          </>
+        )
+      }}
       error={error => (
         <FullPageFlowErrorState
           message={t('signing_error')}
@@ -105,7 +119,7 @@ export const KeysignSigningStep = ({
             </VStack>
             <VStack alignItems="center">
               <Text color="shy" size={12}>
-                {t('version')} {localVersion}
+                {t('version')} {version}
               </Text>
             </VStack>
           </PageContent>

@@ -1,16 +1,17 @@
 import { Chain } from '@core/chain/Chain'
-import { AccountCoin } from '@core/chain/coin/AccountCoin'
 import { areEqualCoins, CoinKey } from '@core/chain/coin/Coin'
 import { isNativeCoin } from '@core/chain/coin/utils/isNativeCoin'
-import { getValueProviderSetup } from '@lib/ui/state/getValueProviderSetup'
 import { groupItems } from '@lib/utils/array/groupItems'
 import { shouldBePresent } from '@lib/utils/assert/shouldBePresent'
 import { useMemo } from 'react'
 
-export const {
-  useValue: useCurrentVaultCoins,
-  provider: CurrentVaultCoinsProvider,
-} = getValueProviderSetup<AccountCoin[]>('CurrentVaultCoins')
+import { useCurrentVault } from './currentVault'
+
+export const useCurrentVaultCoins = () => {
+  const { coins } = useCurrentVault()
+
+  return coins ?? []
+}
 
 export const useCurrentVaultNativeCoins = () => {
   const coins = useCurrentVaultCoins()
@@ -26,7 +27,7 @@ export const useCurrentVaultCoinsByChain = () => {
   }, [coins])
 }
 
-export const useCurrentVaultAddreses = () => {
+export const useCurrentVaultAddresses = () => {
   const coins = useCurrentVaultNativeCoins()
 
   return useMemo(() => {
@@ -37,7 +38,7 @@ export const useCurrentVaultAddreses = () => {
 }
 
 export const useCurrentVaultAddress = (chain: string) => {
-  const addresses = useCurrentVaultAddreses()
+  const addresses = useCurrentVaultAddresses()
 
   return shouldBePresent(addresses[chain as Chain])
 }
